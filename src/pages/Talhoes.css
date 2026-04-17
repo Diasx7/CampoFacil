@@ -1,0 +1,239 @@
+.talhoes-pagina {
+  display: flex;
+  min-height: 100vh;
+  background: #f4f6f0;
+}
+
+.talhoes-main {
+  flex: 1;
+  padding: 1.5rem;
+  overflow: auto;
+}
+
+.talhoes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.talhoes-titulo {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a2e1a;
+}
+
+.talhoes-sub {
+  font-size: 13px;
+  color: #888;
+}
+
+.total-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: block;
+  text-align: right;
+}
+
+.total-val {
+  font-size: 22px;
+  font-weight: 500;
+  color: #1a2e1a;
+  display: block;
+  text-align: right;
+}
+
+.talhoes-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* mapa */
+.mapa-wrapper {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e0e8dc;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.mapa-dica {
+  background: #eaf3de;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #3B6D11;
+  text-align: center;
+}
+
+/* form que aparece depois de desenhar */
+.form-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.form-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  width: 300px;
+}
+
+.form-titulo {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a2e1a;
+  margin-bottom: 0.5rem;
+}
+
+.form-area-medida {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 1rem;
+  background: #eaf3de;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.form-area-medida strong {
+  color: #2d6a4f;
+}
+
+.campo {
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #e0e8dc;
+  border-radius: 8px;
+  background: #f7faf5;
+  color: #1a2e1a;
+  font-size: 14px;
+  padding: 0 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: #2d6a4f;
+  background: #fff;
+}
+
+.form-botoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 0.25rem;
+}
+
+.btn-cancelar {
+  flex: 1;
+  height: 40px;
+  background: none;
+  border: 1px solid #e0e8dc;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #888;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn-salvar {
+  flex: 1;
+  height: 40px;
+  background: #2d6a4f;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-salvar:hover { background: #1b4332; }
+
+/* lista de talhoes */
+.talhoes-lista {
+  background: #fff;
+  border: 1px solid #e0e8dc;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.lista-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.lista-titulo {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a2e1a;
+}
+
+.lista-count {
+  font-size: 12px;
+  color: #888;
+}
+
+.talhao-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-bottom: 4px;
+}
+
+.talhao-card:hover { background: #f7faf5; }
+.talhao-card-ativo { background: #eaf3de; }
+
+.talhao-cor {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.talhao-info { flex: 1; }
+.talhao-nome { font-size: 13px; color: #1a2e1a; font-weight: 500; }
+.talhao-detalhe { font-size: 11px; color: #888; margin-top: 2px; }
+
+.talhao-status {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-ok { background: #eaf3de; color: #3B6D11; }
+.status-warn { background: #faeeda; color: #633806; }
+.status-plan { background: #e6f1fb; color: #185FA5; }

@@ -1,13 +1,24 @@
-body {
+/* reset basico */
+* {
+  box-sizing: border-box;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #f4f6f0;
+  color: #1a2e1a;
+  min-height: 100vh;
+}
+
+/* fonte do google - adicionar no index.html */
+/* <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"> */
+
+input, select, button {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
 }

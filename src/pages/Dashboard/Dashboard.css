@@ -1,0 +1,155 @@
+.dash-pagina {
+  display: flex;
+  min-height: 100vh;
+  background: #f4f6f0;
+}
+
+.dash-main {
+  flex: 1;
+  padding: 1.5rem;
+  overflow: auto;
+}
+
+.dash-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.dash-titulo {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a2e1a;
+}
+
+.dash-data { font-size: 13px; color: #888; }
+
+.dash-topbar-direito { display: flex; gap: 8px; align-items: center; }
+
+.badge-clima {
+  display: flex; align-items: center; gap: 6px;
+  background: #fff; border: 1px solid #e0e8dc;
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 12px; color: #555;
+}
+
+.badge-alerta {
+  background: #faeeda; border: 1px solid #ef9f27;
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 12px; color: #633806; cursor: pointer;
+}
+
+.dash-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+
+.metric-card {
+  background: #fff;
+  border: 1px solid #e0e8dc;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.metric-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+.metric-val { font-size: 22px; font-weight: 500; color: #1a2e1a; }
+.metric-sub { font-size: 11px; margin-top: 4px; }
+.positivo { color: #3B6D11; }
+.negativo { color: #A32D2D; }
+.neutro { color: #888; }
+
+.dash-grid2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e0e8dc;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.card-titulo { font-size: 13px; font-weight: 500; color: #1a2e1a; }
+.card-link { font-size: 12px; color: #2d6a4f; cursor: pointer; }
+
+.talhao-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f4ec;
+}
+
+.talhao-row:last-child { border-bottom: none; }
+
+.talhao-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.talhao-info { flex: 1; }
+.talhao-nome { color: #1a2e1a; font-size: 13px; }
+.talhao-cultura { font-size: 11px; color: #888; }
+
+.badge {
+  font-size: 10px; padding: 3px 8px;
+  border-radius: 20px; font-weight: 500; white-space: nowrap;
+}
+
+.badge-ok { background: #eaf3de; color: #3B6D11; }
+.badge-warn { background: #faeeda; color: #633806; }
+.badge-plan { background: #e6f1fb; color: #185FA5; }
+
+.dash-col-direita { display: flex; flex-direction: column; gap: 10px; }
+
+.clima-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+
+.dia-clima { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dia-nome { font-size: 11px; color: #888; }
+.clima-icone { width: 20px; height: 20px; }
+.dia-temp { font-size: 13px; font-weight: 500; color: #1a2e1a; }
+
+.clima-aviso {
+  background: #faeeda; border-radius: 6px;
+  padding: 7px 10px; font-size: 11px; color: #633806; margin-top: 4px;
+}
+
+.alerta-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f4ec;
+}
+
+.alerta-item:last-child { border-bottom: none; }
+
+.alerta-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.alerta-texto { font-size: 12px; color: #1a2e1a; line-height: 1.5; }
+.alerta-sub { font-size: 11px; color: #888; }
+
+.bar-wrap { margin-bottom: 10px; }
+
+.bar-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: #555; margin-bottom: 4px;
+}
+
+.bar-track { height: 6px; background: #f0f4ec; border-radius: 3px; }
+.bar-fill { height: 6px; border-radius: 3px; transition: width 0.3s; }
+
+.atividade-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #f0f4ec;
+}
+
+.atividade-row:last-child { border-bottom: none; }
+
+.ativ-data { color: #aaa; font-size: 11px; min-width: 34px; padding-top: 1px; }
+.ativ-texto { font-size: 12px; color: #1a2e1a; }
+.ativ-talhao { font-size: 11px; color: #888; }

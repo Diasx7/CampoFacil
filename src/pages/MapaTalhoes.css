@@ -1,0 +1,96 @@
+.mapa-container {
+  position: relative;
+  width: 100%;
+}
+
+.mapa-controles {
+  padding: 10px 12px;
+  background: #fff;
+  border-bottom: 1px solid #e0e8dc;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-desenhar {
+  height: 36px;
+  padding: 0 16px;
+  background: #2d6a4f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-desenhar:hover { background: #1b4332; }
+
+.mapa-controles-desenho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.mapa-instrucao {
+  font-size: 13px;
+  color: #2d6a4f;
+  font-weight: 500;
+  flex: 1;
+}
+
+.btn-finalizar {
+  height: 34px;
+  padding: 0 14px;
+  background: #2d6a4f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn-cancelar-mapa {
+  height: 34px;
+  padding: 0 14px;
+  background: none;
+  border: 1px solid #e0e8dc;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #888;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.mapa-leaflet {
+  height: 500px;
+  width: 100%;
+  z-index: 1;
+}
+
+.mapa-controles-normal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-localizacao {
+  height: 36px;
+  padding: 0 14px;
+  background: none;
+  border: 1px solid #e0e8dc;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #378ADD;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-localizacao:hover { background: #e6f1fb; }
+.btn-localizacao:disabled { color: #aaa; cursor: not-allowed; }
