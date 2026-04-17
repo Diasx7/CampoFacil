@@ -1,70 +1,52 @@
-# Getting Started with Create React App
+# 🌱 CampoFácil
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+App de gestão agrícola feito pra pequenos produtores rurais. A ideia é ser simples de usar no celular e no computador, sem precisar de sistema caro ou complexo.
 
-## Available Scripts
+## O que tem no app
 
-In the project directory, you can run:
+- **Dashboard** — resumo da propriedade, clima, alertas e estoque
+- **Meus Talhões** — mapa com medição de área em hectares (OpenStreetMap)
+- **Módulo de Culturas** — calcula automaticamente sementes, adubo e defensivos por hectare
+- **Estoque** — controle de insumos no galpão com alertas de estoque crítico
+- **Caderno de Campo** — registro de atividades por talhão
+- **Financeiro** — controle de gastos e receitas por safra
 
-### `npm start`
+## Tecnologias
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**Frontend**
+- React.js
+- Leaflet (mapas)
+- CSS puro com CSS Modules
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+**Backend** (em desenvolvimento)
+- Node.js + Express
+- PostgreSQL
+- JWT para autenticação
 
-### `npm test`
+## Como rodar
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Frontend
+```bash
+cd campofacil
+npm install
+npm start
+```
+Abre em `http://localhost:3000`
 
-### `npm run build`
+### Backend
+```bash
+cd campofacil-backend
+npm install
+node server.js
+```
+Roda em `http://localhost:5000`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Banco de dados
+- Instala o PostgreSQL
+- Cria um banco chamado `campofacil`
+- Roda o arquivo `tabelas.sql` no pgAdmin
+- Configura o `.env` com sua senha
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Status
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+🚧 Em desenvolvimento — frontend concluído, backend sendo conectado às telas
