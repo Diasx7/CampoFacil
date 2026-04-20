@@ -320,3 +320,21 @@
   cursor: pointer;
   font-weight: 500;
 }
+
+.btn-deletar-fin {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.12s;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.btn-deletar-fin:hover {
+  background: #fcebeb;
+  color: #A32D2D;
+}

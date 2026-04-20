@@ -1,51 +1,75 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import MapaTalhoes from "./MapaTalhoes";
+import api from "../api";
 import "./Talhoes.css";
 
-// talhoes de exemplo, depois vai vir do banco de dados
-const talhoesIniciais = [
-  { id: 1, nome: "Talhão Norte", cultura: "Milho silagem", area: 24, cor: "#639922", status: "Em crescimento" },
-  { id: 2, nome: "Talhão Sul", cultura: "Soja", area: 18, cor: "#378ADD", status: "Cobertura hoje" },
-  { id: 3, nome: "Milharal Leste", cultura: "Milho grão", area: 20, cor: "#EF9F27", status: "Plantado" },
-  { id: 4, nome: "Área Reserva", cultura: "Sem plantio", area: 25, cor: "#B4B2A9", status: "Planejando" },
-];
-
 function Talhoes({ irPara }) {
-  const [talhoes, setTalhoes] = useState(talhoesIniciais);
+  const [talhoes, setTalhoes] = useState([]);
+  const [carregando, setCarregando] = useState(true);
   const [talhaoCerto, setTalhaoCerto] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [novoNome, setNovoNome] = useState("");
   const [novaCultura, setNovaCultura] = useState("");
   const [areaMedida, setAreaMedida] = useState(null);
 
+  // busca os talhoes do banco quando a tela abre
+  useEffect(() => {
+    buscarTalhoes();
+  }, []);
+
+  async function buscarTalhoes() {
+    try {
+      const resposta = await api.get('/talhoes');
+      setTalhoes(resposta.data);
+    } catch (err) {
+      console.error('Erro ao buscar talhões:', err);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   function receberArea(area) {
     setAreaMedida(area);
     setMostrarForm(true);
   }
 
-  function salvarTalhao(e) {
+  async function salvarTalhao(e) {
     e.preventDefault();
     if (!novoNome || !areaMedida) return;
 
-    const novo = {
-      id: talhoes.length + 1,
-      nome: novoNome,
-      cultura: novaCultura || "Sem plantio",
-      area: areaMedida,
-      cor: "#639922",
-      status: "Planejando",
-    };
+    try {
+      const resposta = await api.post('/talhoes', {
+        nome: novoNome,
+        cultura: novaCultura || "Sem plantio",
+        area: areaMedida,
+        cor: "#639922",
+        status: "Planejando",
+      });
 
-    setTalhoes([...talhoes, novo]);
-    setMostrarForm(false);
-    setNovoNome("");
-    setNovaCultura("");
-    setAreaMedida(null);
+      // adiciona o novo talhao na lista
+      setTalhoes([...talhoes, resposta.data]);
+      setMostrarForm(false);
+      setNovoNome("");
+      setNovaCultura("");
+      setAreaMedida(null);
+    } catch (err) {
+      console.error('Erro ao salvar talhão:', err);
+    }
+  }
+
+  async function deletarTalhao(id) {
+    try {
+      await api.delete(`/talhoes/${id}`);
+      setTalhoes(talhoes.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error('Erro ao deletar talhão:', err);
+    }
   }
 
   function cancelar() {
-    setMostrarForm(false);    setNovoNome("");
+    setMostrarForm(false);
+    setNovoNome("");
     setNovaCultura("");
     setAreaMedida(null);
   }
@@ -63,7 +87,7 @@ function Talhoes({ irPara }) {
           <div className="talhoes-total">
             <span className="total-label">Área total cadastrada</span>
             <span className="total-val">
-              {talhoes.reduce((acc, t) => acc + t.area, 0)} ha
+              {talhoes.reduce((acc, t) => acc + parseFloat(t.area || 0), 0).toFixed(1)} ha
             </span>
           </div>
         </div>
@@ -97,11 +121,8 @@ function Talhoes({ irPara }) {
                     </div>
                     <div className="campo">
                       <label className="label">Cultura (opcional)</label>
-                      <select
-                        className="input"
-                        value={novaCultura}
-                        onChange={(e) => setNovaCultura(e.target.value)}
-                      >
+                      <select className="input" value={novaCultura}
+                        onChange={(e) => setNovaCultura(e.target.value)}>
                         <option value="">Sem plantio</option>
                         <option>Milho silagem</option>
                         <option>Milho grão</option>
@@ -113,12 +134,8 @@ function Talhoes({ irPara }) {
                       </select>
                     </div>
                     <div className="form-botoes">
-                      <button type="button" className="btn-cancelar" onClick={cancelar}>
-                        Cancelar
-                      </button>
-                      <button type="submit" className="btn-salvar">
-                        Salvar talhão
-                      </button>
+                      <button type="button" className="btn-cancelar" onClick={cancelar}>Cancelar</button>
+                      <button type="submit" className="btn-salvar">Salvar talhão</button>
                     </div>
                   </form>
                 </div>
@@ -132,24 +149,34 @@ function Talhoes({ irPara }) {
               <span className="lista-count">{talhoes.length} talhões</span>
             </div>
 
-            {talhoes.map((t) => (
-              <div
-                key={t.id}
-                className={`talhao-card ${talhaoCerto === t.id ? "talhao-card-ativo" : ""}`}
-                onClick={() => setTalhaoCerto(t.id === talhaoCerto ? null : t.id)}
-              >
-                <div className="talhao-cor" style={{ background: t.cor }}></div>
-                <div className="talhao-info">
-                  <div className="talhao-nome">{t.nome}</div>
-                  <div className="talhao-detalhe">{t.cultura} · {t.area} ha</div>
+            {carregando ? (
+              <p style={{ fontSize: "13px", color: "#888", padding: "1rem 0" }}>Carregando...</p>
+            ) : talhoes.length === 0 ? (
+              <p style={{ fontSize: "13px", color: "#888", padding: "1rem 0" }}>Nenhum talhão cadastrado ainda.</p>
+            ) : (
+              talhoes.map((t) => (
+                <div
+                  key={t.id}
+                  className={`talhao-card ${talhaoCerto === t.id ? "talhao-card-ativo" : ""}`}
+                  onClick={() => setTalhaoCerto(t.id === talhaoCerto ? null : t.id)}
+                >
+                  <div className="talhao-cor" style={{ background: t.cor || "#639922" }}></div>
+                  <div className="talhao-info">
+                    <div className="talhao-nome">{t.nome}</div>
+                    <div className="talhao-detalhe">{t.cultura} · {t.area} ha</div>
+                  </div>
+                  <div className="talhao-direita">
+                    <span className={`talhao-status status-${t.status === "Em crescimento" || t.status === "Plantado" ? "ok" : t.status === "Cobertura hoje" ? "warn" : "plan"}`}>
+                      {t.status}
+                    </span>
+                    <button
+                      className="btn-deletar"
+                      onClick={(e) => { e.stopPropagation(); deletarTalhao(t.id); }}
+                    >✕</button>
+                  </div>
                 </div>
-                <div className="talhao-direita">
-                  <span className={`talhao-status status-${t.status === "Em crescimento" || t.status === "Plantado" ? "ok" : t.status === "Cobertura hoje" ? "warn" : "plan"}`}>
-                    {t.status}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

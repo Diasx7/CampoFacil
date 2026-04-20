@@ -82,3 +82,26 @@
 
 .sidebar-nome { font-size: 12px; color: #a5d6a7; }
 .sidebar-prop { font-size: 11px; color: rgba(165,214,167,0.5); }
+
+.sidebar-usuario-info {
+  flex: 1;
+}
+
+.btn-logout {
+  background: none;
+  border: none;
+  color: rgba(165,214,167,0.5);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.btn-logout:hover {
+  color: #E24B4A;
+  background: rgba(226,75,74,0.15);
+}

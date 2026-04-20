@@ -7,11 +7,11 @@ import Plantios from "./pages/Plantios.jsx";
 import Estoque from "./pages/Estoque.jsx";
 import Caderno from "./pages/Caderno.jsx";
 import Financeiro from "./pages/Financeiro.jsx";
+import Produtividade from "./pages/Produtividade.jsx";
 
 function App() {
   const [tela, setTela] = useState("login");
 
-  // verifica se ja tem token salvo quando o app carrega
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -20,7 +20,6 @@ function App() {
   }, []);
 
   function irPara(novaTela) {
-    // quando faz logout limpa o token
     if (novaTela === "login") {
       localStorage.removeItem('token');
       localStorage.removeItem('usuario');
@@ -38,6 +37,7 @@ function App() {
       {tela === "estoque" && <Estoque irPara={irPara} />}
       {tela === "caderno" && <Caderno irPara={irPara} />}
       {tela === "financeiro" && <Financeiro irPara={irPara} />}
+      {tela === "produtividade" && <Produtividade irPara={irPara} />}
     </div>
   );
 }

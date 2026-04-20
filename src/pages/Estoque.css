@@ -300,3 +300,19 @@
 }
 
 .btn-salvar:hover { background: #1b4332; }
+
+.btn-deletar-estoque {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.12s;
+}
+
+.btn-deletar-estoque:hover {
+  background: #fcebeb;
+  color: #A32D2D;
+}

@@ -237,3 +237,20 @@
 .status-ok { background: #eaf3de; color: #3B6D11; }
 .status-warn { background: #faeeda; color: #633806; }
 .status-plan { background: #e6f1fb; color: #185FA5; }
+
+.btn-deletar {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.12s;
+  margin-left: 6px;
+}
+
+.btn-deletar:hover {
+  background: #fcebeb;
+  color: #A32D2D;
+}

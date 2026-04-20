@@ -1,31 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import api from "../api";
 import "./Estoque.css";
-
-// estoque inicial de exemplo
-const estoqueInicial = [
-  { id: 1, nome: "Ureia", categoria: "Adubo", unidade: "kg", quantidade: 210, minimo: 500, preco: 3.2 },
-  { id: 2, nome: "NPK 08-28-16", categoria: "Adubo", unidade: "kg", quantidade: 4060, minimo: 1000, preco: 2.8 },
-  { id: 3, nome: "Atrazina", categoria: "Herbicida", unidade: "L", quantidade: 15.4, minimo: 20, preco: 18 },
-  { id: 4, nome: "Sementes milho", categoria: "Semente", unidade: "sacas", quantidade: 82, minimo: 20, preco: 280 },
-  { id: 5, nome: "Inseticida cupinicida", categoria: "Inseticida", unidade: "L", quantidade: 8, minimo: 5, preco: 45 },
-  { id: 6, nome: "Calcário", categoria: "Correção", unidade: "kg", quantidade: 0, minimo: 2000, preco: 0.25 },
-];
 
 const categorias = ["Todos", "Adubo", "Herbicida", "Inseticida", "Semente", "Correção", "Fungicida"];
 
 function Estoque({ irPara }) {
-  const [itens, setItens] = useState(estoqueInicial);
+  const [itens, setItens] = useState([]);
+  const [carregando, setCarregando] = useState(true);
   const [filtro, setFiltro] = useState("Todos");
   const [mostrarForm, setMostrarForm] = useState(false);
   const [mostrarMovimento, setMostrarMovimento] = useState(null);
   const [form, setForm] = useState({ nome: "", categoria: "Adubo", unidade: "kg", quantidade: "", minimo: "", preco: "" });
   const [movimento, setMovimento] = useState({ tipo: "entrada", quantidade: "" });
 
-  // filtra por categoria
+  useEffect(() => {
+    buscarEstoque();
+  }, []);
+
+  async function buscarEstoque() {
+    try {
+      const resposta = await api.get('/estoque');
+      setItens(resposta.data);
+    } catch (err) {
+      console.error('Erro ao buscar estoque:', err);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   const itensFiltrados = filtro === "Todos" ? itens : itens.filter((i) => i.categoria === filtro);
 
-  // calcula o nivel do estoque
   function nivelEstoque(item) {
     if (item.minimo === 0) return 100;
     return Math.min(Math.round((item.quantidade / item.minimo) * 100), 200);
@@ -46,43 +51,54 @@ function Estoque({ irPara }) {
     return "#639922";
   }
 
-  function salvarItem(e) {
+  async function salvarItem(e) {
     e.preventDefault();
-    const novo = {
-      id: itens.length + 1,
-      nome: form.nome,
-      categoria: form.categoria,
-      unidade: form.unidade,
-      quantidade: parseFloat(form.quantidade) || 0,
-      minimo: parseFloat(form.minimo) || 0,
-      preco: parseFloat(form.preco) || 0,
-    };
-    setItens([...itens, novo]);
-    setMostrarForm(false);
-    setForm({ nome: "", categoria: "Adubo", unidade: "kg", quantidade: "", minimo: "", preco: "" });
+    try {
+      const resposta = await api.post('/estoque', {
+        nome: form.nome,
+        categoria: form.categoria,
+        unidade: form.unidade,
+        quantidade: parseFloat(form.quantidade) || 0,
+        minimo: parseFloat(form.minimo) || 0,
+        preco: parseFloat(form.preco) || 0,
+      });
+      setItens([...itens, resposta.data]);
+      setMostrarForm(false);
+      setForm({ nome: "", categoria: "Adubo", unidade: "kg", quantidade: "", minimo: "", preco: "" });
+    } catch (err) {
+      console.error('Erro ao salvar item:', err);
+    }
   }
 
-  function salvarMovimento(e) {
+  async function salvarMovimento(e) {
     e.preventDefault();
+    const item = itens.find((i) => i.id === mostrarMovimento);
     const qtd = parseFloat(movimento.quantidade) || 0;
-    setItens(itens.map((item) => {
-      if (item.id === mostrarMovimento) {
-        const nova = movimento.tipo === "entrada"
-          ? item.quantidade + qtd
-          : Math.max(0, item.quantidade - qtd);
-        return { ...item, quantidade: Math.round(nova * 10) / 10 };
-      }
-      return item;
-    }));
-    setMostrarMovimento(null);
-    setMovimento({ tipo: "entrada", quantidade: "" });
+    const novaQtd = movimento.tipo === "entrada"
+      ? parseFloat(item.quantidade) + qtd
+      : Math.max(0, parseFloat(item.quantidade) - qtd);
+
+    try {
+      const resposta = await api.put(`/estoque/${mostrarMovimento}`, { quantidade: novaQtd });
+      setItens(itens.map((i) => i.id === mostrarMovimento ? resposta.data : i));
+      setMostrarMovimento(null);
+      setMovimento({ tipo: "entrada", quantidade: "" });
+    } catch (err) {
+      console.error('Erro ao atualizar estoque:', err);
+    }
   }
 
-  // itens com estoque critico
-  const itensCriticos = itens.filter((i) => statusEstoque(i) === "critico" || statusEstoque(i) === "zerado");
+  async function deletarItem(id) {
+    try {
+      await api.delete(`/estoque/${id}`);
+      setItens(itens.filter((i) => i.id !== id));
+    } catch (err) {
+      console.error('Erro ao deletar item:', err);
+    }
+  }
 
-  // valor total em estoque
-  const valorTotal = itens.reduce((acc, i) => acc + i.quantidade * i.preco, 0);
+  const itensCriticos = itens.filter((i) => statusEstoque(i) === "critico" || statusEstoque(i) === "zerado");
+  const valorTotal = itens.reduce((acc, i) => acc + parseFloat(i.quantidade) * parseFloat(i.preco), 0);
 
   return (
     <div className="estoque-pagina">
@@ -94,12 +110,9 @@ function Estoque({ irPara }) {
             <h1 className="estoque-titulo">Estoque de insumos</h1>
             <span className="estoque-sub">Controle o que você tem no galpão</span>
           </div>
-          <button className="btn-novo-item" onClick={() => setMostrarForm(true)}>
-            + Novo item
-          </button>
+          <button className="btn-novo-item" onClick={() => setMostrarForm(true)}>+ Novo item</button>
         </div>
 
-        {/* cards de resumo */}
         <div className="estoque-metrics">
           <div className="metric-card">
             <div className="metric-label">Total de itens</div>
@@ -113,82 +126,56 @@ function Estoque({ irPara }) {
           </div>
           <div className="metric-card">
             <div className="metric-label">Valor em estoque</div>
-            <div className="metric-val">
-              {valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-            </div>
+            <div className="metric-val">{valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</div>
           </div>
         </div>
 
-        {/* alerta de itens criticos */}
         {itensCriticos.length > 0 && (
           <div className="alerta-critico">
             <strong>Atenção!</strong> {itensCriticos.map((i) => i.nome).join(", ")} {itensCriticos.length === 1 ? "está" : "estão"} com estoque crítico ou zerado.
           </div>
         )}
 
-        {/* filtro de categorias */}
         <div className="filtro-categorias">
           {categorias.map((c) => (
-            <button
-              key={c}
-              className={`filtro-btn ${filtro === c ? "filtro-btn-ativo" : ""}`}
-              onClick={() => setFiltro(c)}
-            >
-              {c}
-            </button>
+            <button key={c} className={`filtro-btn ${filtro === c ? "filtro-btn-ativo" : ""}`} onClick={() => setFiltro(c)}>{c}</button>
           ))}
         </div>
 
-        {/* lista de itens */}
         <div className="estoque-lista">
-          {itensFiltrados.map((item) => (
-            <div key={item.id} className="estoque-item">
-              <div className="item-info">
-                <div className="item-nome">{item.nome}</div>
-                <div className="item-categoria">{item.categoria}</div>
-              </div>
-
-              <div className="item-barra-wrap">
-                <div className="item-barra-track">
-                  <div
-                    className="item-barra-fill"
-                    style={{
-                      width: `${Math.min(nivelEstoque(item), 100)}%`,
-                      background: corBarra(item),
-                    }}
-                  ></div>
+          {carregando ? (
+            <p style={{ fontSize: "13px", color: "#888" }}>Carregando...</p>
+          ) : itensFiltrados.length === 0 ? (
+            <p style={{ fontSize: "13px", color: "#888" }}>Nenhum item cadastrado ainda.</p>
+          ) : (
+            itensFiltrados.map((item) => (
+              <div key={item.id} className="estoque-item">
+                <div className="item-info">
+                  <div className="item-nome">{item.nome}</div>
+                  <div className="item-categoria">{item.categoria}</div>
                 </div>
-                <div className="item-barra-labels">
-                  <span className="item-quantidade" style={{ color: corBarra(item) }}>
-                    {item.quantidade} {item.unidade}
-                  </span>
-                  <span className="item-minimo">mín: {item.minimo} {item.unidade}</span>
+                <div className="item-barra-wrap">
+                  <div className="item-barra-track">
+                    <div className="item-barra-fill" style={{ width: `${Math.min(nivelEstoque(item), 100)}%`, background: corBarra(item) }}></div>
+                  </div>
+                  <div className="item-barra-labels">
+                    <span className="item-quantidade" style={{ color: corBarra(item) }}>{item.quantidade} {item.unidade}</span>
+                    <span className="item-minimo">mín: {item.minimo} {item.unidade}</span>
+                  </div>
+                </div>
+                <div className="item-valor">
+                  {(parseFloat(item.quantidade) * parseFloat(item.preco)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+                <div className="item-acoes">
+                  <button className="btn-entrada" onClick={() => { setMostrarMovimento(item.id); setMovimento({ tipo: "entrada", quantidade: "" }); }}>+ Entrada</button>
+                  <button className="btn-saida" onClick={() => { setMostrarMovimento(item.id); setMovimento({ tipo: "saida", quantidade: "" }); }}>− Saída</button>
+                  <button className="btn-deletar-estoque" onClick={() => deletarItem(item.id)}>✕</button>
                 </div>
               </div>
-
-              <div className="item-valor">
-                {(item.quantidade * item.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-              </div>
-
-              <div className="item-acoes">
-                <button
-                  className="btn-entrada"
-                  onClick={() => { setMostrarMovimento(item.id); setMovimento({ tipo: "entrada", quantidade: "" }); }}
-                >
-                  + Entrada
-                </button>
-                <button
-                  className="btn-saida"
-                  onClick={() => { setMostrarMovimento(item.id); setMovimento({ tipo: "saida", quantidade: "" }); }}
-                >
-                  − Saída
-                </button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
-        {/* modal novo item */}
         {mostrarForm && (
           <div className="modal-overlay" onClick={() => setMostrarForm(false)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -202,22 +189,14 @@ function Estoque({ irPara }) {
                 <div className="linha-2">
                   <div className="campo">
                     <label className="label">Categoria</label>
-                    <select className="input" value={form.categoria}
-                      onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
-                      {categorias.filter((c) => c !== "Todos").map((c) => (
-                        <option key={c}>{c}</option>
-                      ))}
+                    <select className="input" value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
+                      {categorias.filter((c) => c !== "Todos").map((c) => <option key={c}>{c}</option>)}
                     </select>
                   </div>
                   <div className="campo">
                     <label className="label">Unidade</label>
-                    <select className="input" value={form.unidade}
-                      onChange={(e) => setForm({ ...form, unidade: e.target.value })}>
-                      <option>kg</option>
-                      <option>L</option>
-                      <option>sacas</option>
-                      <option>ton</option>
-                      <option>doses</option>
+                    <select className="input" value={form.unidade} onChange={(e) => setForm({ ...form, unidade: e.target.value })}>
+                      <option>kg</option><option>L</option><option>sacas</option><option>ton</option><option>doses</option>
                     </select>
                   </div>
                 </div>
@@ -247,38 +226,22 @@ function Estoque({ irPara }) {
           </div>
         )}
 
-        {/* modal movimento */}
         {mostrarMovimento && (
           <div className="modal-overlay" onClick={() => setMostrarMovimento(null)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-              <h3 className="modal-titulo">
-                {movimento.tipo === "entrada" ? "Entrada de estoque" : "Saída de estoque"}
-              </h3>
-              <p className="modal-sub">
-                {itens.find((i) => i.id === mostrarMovimento)?.nome}
-              </p>
+              <h3 className="modal-titulo">{movimento.tipo === "entrada" ? "Entrada de estoque" : "Saída de estoque"}</h3>
+              <p className="modal-sub">{itens.find((i) => i.id === mostrarMovimento)?.nome}</p>
               <form onSubmit={salvarMovimento}>
                 <div className="tipo-movimento">
-                  <button
-                    type="button"
-                    className={`tipo-btn ${movimento.tipo === "entrada" ? "tipo-btn-ativo-entrada" : ""}`}
-                    onClick={() => setMovimento({ ...movimento, tipo: "entrada" })}
-                  >
-                    + Entrada
-                  </button>
-                  <button
-                    type="button"
-                    className={`tipo-btn ${movimento.tipo === "saida" ? "tipo-btn-ativo-saida" : ""}`}
-                    onClick={() => setMovimento({ ...movimento, tipo: "saida" })}
-                  >
-                    − Saída
-                  </button>
+                  <button type="button" className={`tipo-btn ${movimento.tipo === "entrada" ? "tipo-btn-ativo-entrada" : ""}`}
+                    onClick={() => setMovimento({ ...movimento, tipo: "entrada" })}>+ Entrada</button>
+                  <button type="button" className={`tipo-btn ${movimento.tipo === "saida" ? "tipo-btn-ativo-saida" : ""}`}
+                    onClick={() => setMovimento({ ...movimento, tipo: "saida" })}>− Saída</button>
                 </div>
                 <div className="campo" style={{ marginTop: "1rem" }}>
                   <label className="label">Quantidade</label>
                   <input type="number" className="input" placeholder="0" required step="0.1"
-                    value={movimento.quantidade}
-                    onChange={(e) => setMovimento({ ...movimento, quantidade: e.target.value })} />
+                    value={movimento.quantidade} onChange={(e) => setMovimento({ ...movimento, quantidade: e.target.value })} />
                 </div>
                 <div className="modal-botoes">
                   <button type="button" className="btn-cancelar" onClick={() => setMostrarMovimento(null)}>Cancelar</button>
