@@ -11,6 +11,8 @@ function Estoque({ irPara }) {
   const [filtro, setFiltro] = useState("Todos");
   const [mostrarForm, setMostrarForm] = useState(false);
   const [mostrarMovimento, setMostrarMovimento] = useState(null);
+  const [mostrarHistorico, setMostrarHistorico] = useState(null);
+  const [historico, setHistorico] = useState([]);
   const [form, setForm] = useState({ nome: "", categoria: "Adubo", unidade: "kg", quantidade: "", minimo: "", preco: "" });
   const [movimento, setMovimento] = useState({ tipo: "entrada", quantidade: "" });
 
@@ -29,16 +31,26 @@ function Estoque({ irPara }) {
     }
   }
 
+  async function verHistorico(id) {
+    try {
+      const resposta = await api.get(`/estoque/${id}/historico`);
+      setHistorico(resposta.data);
+      setMostrarHistorico(id);
+    } catch (err) {
+      console.error('Erro ao buscar histórico:', err);
+    }
+  }
+
   const itensFiltrados = filtro === "Todos" ? itens : itens.filter((i) => i.categoria === filtro);
 
   function nivelEstoque(item) {
-    if (item.minimo === 0) return 100;
-    return Math.min(Math.round((item.quantidade / item.minimo) * 100), 200);
+    if (parseFloat(item.minimo) === 0) return 100;
+    return Math.min(Math.round((parseFloat(item.quantidade) / parseFloat(item.minimo)) * 100), 200);
   }
 
   function statusEstoque(item) {
-    const pct = (item.quantidade / item.minimo) * 100;
-    if (item.quantidade === 0) return "zerado";
+    const pct = (parseFloat(item.quantidade) / parseFloat(item.minimo)) * 100;
+    if (parseFloat(item.quantidade) === 0) return "zerado";
     if (pct < 30) return "critico";
     if (pct < 80) return "atencao";
     return "ok";
@@ -55,9 +67,7 @@ function Estoque({ irPara }) {
     e.preventDefault();
     try {
       const resposta = await api.post('/estoque', {
-        nome: form.nome,
-        categoria: form.categoria,
-        unidade: form.unidade,
+        nome: form.nome, categoria: form.categoria, unidade: form.unidade,
         quantidade: parseFloat(form.quantidade) || 0,
         minimo: parseFloat(form.minimo) || 0,
         preco: parseFloat(form.preco) || 0,
@@ -79,7 +89,10 @@ function Estoque({ irPara }) {
       : Math.max(0, parseFloat(item.quantidade) - qtd);
 
     try {
-      const resposta = await api.put(`/estoque/${mostrarMovimento}`, { quantidade: novaQtd });
+      const resposta = await api.put(`/estoque/${mostrarMovimento}`, {
+        quantidade: novaQtd,
+        tipo: movimento.tipo,
+      });
       setItens(itens.map((i) => i.id === mostrarMovimento ? resposta.data : i));
       setMostrarMovimento(null);
       setMovimento({ tipo: "entrada", quantidade: "" });
@@ -95,6 +108,12 @@ function Estoque({ irPara }) {
     } catch (err) {
       console.error('Erro ao deletar item:', err);
     }
+  }
+
+  function formatarDataHora(data) {
+    if (!data) return "";
+    const d = new Date(data);
+    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
   }
 
   const itensCriticos = itens.filter((i) => statusEstoque(i) === "critico" || statusEstoque(i) === "zerado");
@@ -169,6 +188,7 @@ function Estoque({ irPara }) {
                 <div className="item-acoes">
                   <button className="btn-entrada" onClick={() => { setMostrarMovimento(item.id); setMovimento({ tipo: "entrada", quantidade: "" }); }}>+ Entrada</button>
                   <button className="btn-saida" onClick={() => { setMostrarMovimento(item.id); setMovimento({ tipo: "saida", quantidade: "" }); }}>− Saída</button>
+                  <button className="btn-historico" onClick={() => verHistorico(item.id)}>Histórico</button>
                   <button className="btn-deletar-estoque" onClick={() => deletarItem(item.id)}>✕</button>
                 </div>
               </div>
@@ -176,6 +196,40 @@ function Estoque({ irPara }) {
           )}
         </div>
 
+        {/* modal historico */}
+        {mostrarHistorico && (
+          <div className="modal-overlay" onClick={() => setMostrarHistorico(null)}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <h3 className="modal-titulo">Histórico de movimentações</h3>
+              <p className="modal-sub">{itens.find((i) => i.id === mostrarHistorico)?.nome}</p>
+              {historico.length === 0 ? (
+                <p style={{ fontSize: "13px", color: "#888" }}>Nenhuma movimentação ainda.</p>
+              ) : (
+                <div className="historico-lista">
+                  {historico.map((h) => (
+                    <div key={h.id} className="historico-item">
+                      <div className={`historico-tipo ${h.tipo === "entrada" ? "tipo-entrada" : "tipo-saida"}`}>
+                        {h.tipo === "entrada" ? "+" : "−"}
+                      </div>
+                      <div className="historico-info">
+                        <div className="historico-qtd">
+                          {h.tipo === "entrada" ? "+" : "−"}{h.quantidade} unidades
+                        </div>
+                        <div className="historico-detalhe">
+                          {h.quantidade_anterior} → {h.quantidade_nova}
+                        </div>
+                      </div>
+                      <div className="historico-data">{formatarDataHora(h.criado_em)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button className="btn-salvar" style={{ width: "100%", marginTop: "1rem" }} onClick={() => setMostrarHistorico(null)}>Fechar</button>
+            </div>
+          </div>
+        )}
+
+        {/* modal novo item */}
         {mostrarForm && (
           <div className="modal-overlay" onClick={() => setMostrarForm(false)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -226,6 +280,7 @@ function Estoque({ irPara }) {
           </div>
         )}
 
+        {/* modal movimento */}
         {mostrarMovimento && (
           <div className="modal-overlay" onClick={() => setMostrarMovimento(null)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>

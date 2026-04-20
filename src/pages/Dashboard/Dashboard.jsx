@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
+import Clima from "../../components/Clima";
 import api from "../../api";
 import "./Dashboard.css";
 
@@ -154,26 +155,7 @@ function Dashboard({ irPara }) {
                   <div className="card-header">
                     <span className="card-titulo">Previsão do tempo</span>
                   </div>
-                  <div className="clima-row">
-                    {[
-                      { dia: "Hoje", temp: 28, tipo: "sol" },
-                      { dia: "Ter", temp: 25, tipo: "parcial" },
-                      { dia: "Qua", temp: 21, tipo: "chuva" },
-                      { dia: "Qui", temp: 19, tipo: "chuva" },
-                      { dia: "Sex", temp: 27, tipo: "sol" },
-                    ].map((d) => (
-                      <div key={d.dia} className="dia-clima">
-                        <span className="dia-nome">{d.dia}</span>
-                        <div className="clima-icone">
-                          {d.tipo === "sol" && <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" fill="#EF9F27" /></svg>}
-                          {d.tipo === "parcial" && <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8" cy="9" r="3" fill="#EF9F27" /><path d="M8 14 Q10 11 13 12 Q16 12 16 15 Q15 17 11 17 Q8 17 7 15 Q6 13 8 14Z" fill="#B4B2A9" /></svg>}
-                          {d.tipo === "chuva" && <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10 Q6 6 10 7 Q13 5 16 8 Q19 9 18 13 Q17 16 12 15 Q7 16 5 14 Q2 12 4 10Z" fill="#B4B2A9" /><path d="M8 15 L7 18M11 15 L10 18M14 15 L13 18" stroke="#378ADD" strokeWidth="1.2" strokeLinecap="round" /></svg>}
-                        </div>
-                        <span className="dia-temp">{d.temp}°</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="clima-aviso">Chuva na quarta e quinta — evite aplicar defensivo nesses dias</div>
+                  <Clima />
                 </div>
 
                 {itensCriticos.length > 0 && (
