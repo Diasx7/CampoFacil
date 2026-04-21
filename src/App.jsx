@@ -9,13 +9,19 @@ import Caderno from "./pages/Caderno.jsx";
 import Financeiro from "./pages/Financeiro.jsx";
 import Produtividade from "./pages/Produtividade.jsx";
 import Perfil from "./pages/Perfil.jsx";
+import Loading from "./components/Loading";
 
 function App() {
-  const [tela, setTela] = useState("login");
+  const [tela, setTela] = useState(null); // null = carregando
+  const [iniciando, setIniciando] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) setTela("dashboard");
+    // pequeno delay pra mostrar o loading na inicializacao
+    setTimeout(() => {
+      const token = localStorage.getItem('token');
+      setTela(token ? "dashboard" : "login");
+      setIniciando(false);
+    }, 800);
   }, []);
 
   function irPara(novaTela) {
@@ -24,6 +30,10 @@ function App() {
       localStorage.removeItem('usuario');
     }
     setTela(novaTela);
+  }
+
+  if (iniciando) {
+    return <Loading texto="Iniciando CampoFácil..." />;
   }
 
   return (

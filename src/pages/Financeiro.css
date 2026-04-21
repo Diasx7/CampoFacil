@@ -363,3 +363,19 @@
 
 .fin-aba:hover { color: #2d6a4f; }
 .fin-aba-ativa { color: #2d6a4f; border-bottom-color: #2d6a4f; font-weight: 500; }
+
+.btn-pdf {
+  height: 38px;
+  padding: 0 16px;
+  background: #185FA5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-pdf:hover { background: #0e4070; }

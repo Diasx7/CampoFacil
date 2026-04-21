@@ -1,0 +1,45 @@
+.loading-tela {
+  position: fixed;
+  inset: 0;
+  background: #f4f6f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-conteudo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-logo {
+  width: 56px;
+  height: 56px;
+  background: #1a3a2a;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e0e8dc;
+  border-top-color: #2d6a4f;
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+.loading-texto {
+  font-size: 13px;
+  color: #888;
+  font-family: 'DM Sans', sans-serif;
+}

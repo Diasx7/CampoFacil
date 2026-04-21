@@ -3,6 +3,8 @@ import Sidebar from "../components/Sidebar";
 import api from "../api";
 import useTalhoes from "../hooks/useTalhoes";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "./Financeiro.css";
 
 const categoriasGasto = ["Adubo", "Semente", "Defensivo", "Mão de obra", "Combustível", "Manutenção", "Outro"];
@@ -22,7 +24,7 @@ function Financeiro({ irPara }) {
   const [transacoes, setTransacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState("todos");
-  const [abaAtiva, setAbaAtiva] = useState("lancamentos"); // lancamentos ou graficos
+  const [abaAtiva, setAbaAtiva] = useState("lancamentos");
   const [mostrarForm, setMostrarForm] = useState(false);
   const [tipoForm, setTipoForm] = useState("gasto");
 
@@ -60,14 +62,12 @@ function Financeiro({ irPara }) {
     .filter((t) => filtroTipo === "todos" || t.tipo === filtroTipo)
     .sort((a, b) => new Date(b.data) - new Date(a.data));
 
-  // dados pro grafico de barras por categoria
   const dadosBarras = categoriasGasto.map((cat) => ({
     nome: cat,
     valor: transacoes.filter((t) => t.tipo === "gasto" && t.categoria === cat)
       .reduce((acc, t) => acc + parseFloat(t.valor), 0),
   })).filter((c) => c.valor > 0);
 
-  // dados pro grafico de linha - evolucao do saldo por mes
   const dadosLinha = () => {
     const porMes = {};
     transacoes.forEach((t) => {
@@ -83,6 +83,127 @@ function Financeiro({ irPara }) {
       return new Date(`${ya}-${ma}-01`) - new Date(`${yb}-${mb}-01`);
     }).map((m) => ({ ...m, saldo: m.receitas - m.gastos }));
   };
+
+  // gera o relatorio em PDF
+  function gerarPDF() {
+    const doc = new jsPDF();
+    const usuarioSalvo = localStorage.getItem('usuario');
+    const usuario = usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+
+    // cabecalho
+    doc.setFillColor(26, 58, 42);
+    doc.rect(0, 0, 210, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CampoFácil', 14, 15);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Relatório Financeiro', 14, 23);
+    doc.setFontSize(9);
+    doc.text(`Gerado em ${dataAtual}`, 14, 30);
+    if (usuario?.nome_propriedade) {
+      doc.text(usuario.nome_propriedade, 196, 30, { align: 'right' });
+    }
+
+    // resumo
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumo', 14, 48);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+
+    // cards de resumo
+    const cards = [
+      { label: 'Total de Receitas', valor: formatarDinheiro(totalReceitas), cor: [39, 107, 79] },
+      { label: 'Total de Gastos', valor: formatarDinheiro(totalGastos), cor: [163, 45, 45] },
+      { label: 'Saldo', valor: formatarDinheiro(saldo), cor: saldo >= 0 ? [39, 107, 79] : [163, 45, 45] },
+    ];
+
+    cards.forEach((card, i) => {
+      const x = 14 + i * 62;
+      doc.setFillColor(247, 250, 245);
+      doc.roundedRect(x, 53, 58, 22, 3, 3, 'F');
+      doc.setTextColor(136, 136, 136);
+      doc.setFontSize(8);
+      doc.text(card.label, x + 5, 61);
+      doc.setTextColor(...card.cor);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(card.valor, x + 5, 70);
+      doc.setFont('helvetica', 'normal');
+    });
+
+    // tabela de lancamentos
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Lançamentos', 14, 90);
+
+    const linhas = transacoes
+      .sort((a, b) => new Date(b.data) - new Date(a.data))
+      .map((t) => [
+        formatarData(t.data),
+        t.descricao,
+        t.categoria,
+        t.talhao,
+        t.tipo === "receita" ? "Receita" : "Gasto",
+        formatarDinheiro(t.valor),
+      ]);
+
+    autoTable(doc, {
+      startY: 94,
+      head: [['Data', 'Descrição', 'Categoria', 'Talhão', 'Tipo', 'Valor']],
+      body: linhas,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [26, 58, 42], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [247, 250, 245] },
+      columnStyles: {
+        4: { cellWidth: 20 },
+        5: { cellWidth: 28, halign: 'right' },
+      },
+      didParseCell: (data) => {
+        if (data.column.index === 4 && data.section === 'body') {
+          data.cell.styles.textColor = data.cell.raw === 'Receita' ? [39, 107, 79] : [163, 45, 45];
+        }
+      },
+    });
+
+    // gastos por categoria
+    if (dadosBarras.length > 0) {
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Gastos por categoria', 14, finalY);
+
+      autoTable(doc, {
+        startY: finalY + 4,
+        head: [['Categoria', 'Total', '% do total']],
+        body: dadosBarras.map((c) => [
+          c.cat,
+          formatarDinheiro(c.total),
+          `${Math.round((c.total / totalGastos) * 100)}%`,
+        ]),
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [26, 58, 42], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [247, 250, 245] },
+      });
+    }
+
+    // rodape
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(170, 170, 170);
+      doc.text(`Página ${i} de ${pageCount} — CampoFácil`, 105, 290, { align: 'center' });
+    }
+
+    doc.save(`relatorio-financeiro-${dataAtual.replace(/\//g, '-')}.pdf`);
+  }
 
   function abrirForm(tipo) {
     setTipoForm(tipo);
@@ -130,12 +251,12 @@ function Financeiro({ irPara }) {
             <span className="fin-sub">Controle de gastos e receitas da propriedade</span>
           </div>
           <div className="fin-header-btns">
+            <button className="btn-pdf" onClick={gerarPDF}>📄 Exportar PDF</button>
             <button className="btn-gasto" onClick={() => abrirForm("gasto")}>− Registrar gasto</button>
             <button className="btn-receita" onClick={() => abrirForm("receita")}>+ Registrar receita</button>
           </div>
         </div>
 
-        {/* cards de resumo */}
         <div className="fin-metrics">
           <div className="metric-card">
             <div className="metric-label">Total de receitas</div>
@@ -151,7 +272,6 @@ function Financeiro({ irPara }) {
           </div>
         </div>
 
-        {/* abas */}
         <div className="fin-abas">
           <button className={`fin-aba ${abaAtiva === "lancamentos" ? "fin-aba-ativa" : ""}`}
             onClick={() => setAbaAtiva("lancamentos")}>Lançamentos</button>
@@ -159,7 +279,6 @@ function Financeiro({ irPara }) {
             onClick={() => setAbaAtiva("graficos")}>Gráficos</button>
         </div>
 
-        {/* aba lancamentos */}
         {abaAtiva === "lancamentos" && (
           <div className="fin-grid">
             <div className="fin-card">
@@ -214,7 +333,6 @@ function Financeiro({ irPara }) {
           </div>
         )}
 
-        {/* aba graficos */}
         {abaAtiva === "graficos" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <div className="fin-card">
@@ -258,7 +376,6 @@ function Financeiro({ irPara }) {
           </div>
         )}
 
-        {/* modal */}
         {mostrarForm && (
           <div className="modal-overlay" onClick={() => setMostrarForm(false)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
