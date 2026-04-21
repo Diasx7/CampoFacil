@@ -370,3 +370,19 @@
 .historico-qtd { font-size: 13px; color: #1a2e1a; font-weight: 500; }
 .historico-detalhe { font-size: 11px; color: #888; }
 .historico-data { font-size: 11px; color: #aaa; white-space: nowrap; }
+
+.btn-whatsapp {
+  height: 38px;
+  padding: 0 16px;
+  background: #25D366;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-whatsapp:hover { background: #1da851; }

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { culturas, listaCulturas } from "./dadosCulturas";
 import useTalhoes from "../hooks/useTalhoes";
+import api from "../api";
 import "./Plantios.css";
 
 function Plantios({ irPara }) {
@@ -9,12 +10,27 @@ function Plantios({ irPara }) {
   const [culturaSelecionada, setCulturaSelecionada] = useState("");
   const [precos, setPrecos] = useState({});
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
+  const [plantiosSalvos, setPlantiosSalvos] = useState([]);
+  const [salvando, setSalvando] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
 
-  // busca os talhoes reais do usuario
   const { talhoes, carregando } = useTalhoes();
 
   const cultura = culturas[culturaSelecionada];
   const talhao = talhoes.find((t) => t.id === talhaoSelecionado);
+
+  useEffect(() => {
+    buscarPlantios();
+  }, []);
+
+  async function buscarPlantios() {
+    try {
+      const resposta = await api.get('/plantios');
+      setPlantiosSalvos(resposta.data);
+    } catch (err) {
+      console.error('Erro ao buscar plantios:', err);
+    }
+  }
 
   function calcularQuantidade(porHectare) {
     if (!talhao) return 0;
@@ -35,6 +51,51 @@ function Plantios({ irPara }) {
     return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
 
+  async function salvarPlantio() {
+    if (!talhao || !cultura) return;
+    setSalvando(true);
+
+    const insumos = cultura.insumos.map((insumo) => ({
+      nome: insumo.nome,
+      quantidade: calcularQuantidade(insumo.porHectare),
+      unidade: insumo.unidade,
+      custo: calcularCusto(insumo),
+    }));
+
+    try {
+      const resposta = await api.post('/plantios', {
+        talhao_id: talhao.id,
+        talhao_nome: talhao.nome,
+        cultura: culturaSelecionada,
+        area: talhao.area,
+        custo_total: custoTotal(),
+        insumos,
+      });
+      setPlantiosSalvos([resposta.data, ...plantiosSalvos]);
+      setSucesso(true);
+      setTimeout(() => setSucesso(false), 3000);
+    } catch (err) {
+      console.error('Erro ao salvar plantio:', err);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function deletarPlantio(id) {
+    try {
+      await api.delete(`/plantios/${id}`);
+      setPlantiosSalvos(plantiosSalvos.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error('Erro ao deletar plantio:', err);
+    }
+  }
+
+  function formatarData(data) {
+    if (!data) return "";
+    const d = new Date(data);
+    return d.toLocaleDateString('pt-BR');
+  }
+
   return (
     <div className="plantios-pagina">
       <Sidebar telaAtiva="plantios" irPara={irPara} />
@@ -48,7 +109,6 @@ function Plantios({ irPara }) {
         </div>
 
         <div className="plantios-grid">
-          {/* painel esquerdo - selecao */}
           <div className="plantios-selecao">
             <div className="selecao-card">
               <div className="selecao-titulo">1. Selecione o talhão</div>
@@ -56,17 +116,14 @@ function Plantios({ irPara }) {
                 <p style={{ fontSize: "13px", color: "#888" }}>Carregando talhões...</p>
               ) : talhoes.length === 0 ? (
                 <p style={{ fontSize: "13px", color: "#888" }}>
-                  Nenhum talhão cadastrado ainda.{" "}
+                  Nenhum talhão cadastrado.{" "}
                   <button style={{ background: "none", border: "none", color: "#2d6a4f", cursor: "pointer", textDecoration: "underline", fontSize: "13px" }}
-                    onClick={() => irPara("talhoes")}>
-                    Cadastrar agora
-                  </button>
+                    onClick={() => irPara("talhoes")}>Cadastrar agora</button>
                 </p>
               ) : (
                 <div className="talhao-lista">
                   {talhoes.map((t) => (
-                    <div
-                      key={t.id}
+                    <div key={t.id}
                       className={`talhao-opcao ${talhaoSelecionado === t.id ? "talhao-opcao-ativo" : ""}`}
                       onClick={() => setTalhaoSelecionado(t.id)}
                     >
@@ -82,8 +139,7 @@ function Plantios({ irPara }) {
               <div className="selecao-titulo">2. Selecione a cultura</div>
               <div className="cultura-lista">
                 {listaCulturas.map((c) => (
-                  <div
-                    key={c}
+                  <div key={c}
                     className={`cultura-opcao ${culturaSelecionada === c ? "cultura-opcao-ativa" : ""}`}
                     onClick={() => setCulturaSelecionada(c)}
                   >
@@ -96,9 +152,24 @@ function Plantios({ irPara }) {
                 ))}
               </div>
             </div>
+
+            {/* historico de plantios salvos */}
+            {plantiosSalvos.length > 0 && (
+              <div className="selecao-card">
+                <div className="selecao-titulo">Plantios salvos</div>
+                {plantiosSalvos.slice(0, 5).map((p) => (
+                  <div key={p.id} className="plantio-salvo-item">
+                    <div className="plantio-salvo-info">
+                      <div className="plantio-salvo-nome">{p.talhao_nome} — {p.cultura}</div>
+                      <div className="plantio-salvo-detalhe">{p.area} ha · {parseFloat(p.custo_total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · {formatarData(p.criado_em)}</div>
+                    </div>
+                    <button className="btn-del-plantio" onClick={() => deletarPlantio(p.id)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* painel direito - resultados */}
           <div className="plantios-resultado">
             {!talhaoSelecionado || !culturaSelecionada ? (
               <div className="resultado-vazio">
@@ -107,6 +178,12 @@ function Plantios({ irPara }) {
               </div>
             ) : (
               <>
+                {sucesso && (
+                  <div style={{ background: "#eaf3de", border: "1px solid #c0dd97", borderRadius: "8px", padding: "10px 14px", fontSize: "13px", color: "#3B6D11", marginBottom: "10px" }}>
+                    Plantio salvo com sucesso!
+                  </div>
+                )}
+
                 <div className="resultado-resumo">
                   <div>
                     <div className="resumo-titulo">{talhao.nome} — {culturaSelecionada}</div>
@@ -161,6 +238,11 @@ function Plantios({ irPara }) {
                       <span className="total-valor">{formatarDinheiro(custoTotal())}</span>
                     </div>
                   </div>
+
+                  {/* botao de salvar plantio */}
+                  <button className="btn-salvar-plantio" onClick={salvarPlantio} disabled={salvando}>
+                    {salvando ? "Salvando..." : "💾 Salvar este plantio"}
+                  </button>
                 </div>
 
                 <div className="calendario-card">

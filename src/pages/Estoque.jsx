@@ -41,6 +41,31 @@ function Estoque({ irPara }) {
     }
   }
 
+  // gera a lista de compras e abre no whatsapp
+  function compartilharWhatsApp() {
+    const itensBaixos = itens.filter((i) => {
+      const pct = parseFloat(i.minimo) > 0
+        ? (parseFloat(i.quantidade) / parseFloat(i.minimo)) * 100
+        : 100;
+      return parseFloat(i.quantidade) === 0 || pct < 50;
+    });
+
+    if (itensBaixos.length === 0) {
+      alert('Nenhum item com estoque baixo no momento!');
+      return;
+    }
+
+    const linhas = itensBaixos.map((i) => {
+      const falta = Math.max(0, parseFloat(i.minimo) - parseFloat(i.quantidade));
+      return "• " + i.nome + ": " + falta.toFixed(1) + " " + i.unidade;
+    });
+
+    const data = new Date().toLocaleDateString('pt-BR');
+    const mensagem = "Lista de compras — CampoFácil\n\n" + linhas.join("\n") + "\n\nGerado em " + data;
+    const url = "https://wa.me/?text=" + encodeURIComponent(mensagem);
+    window.open(url, '_blank');
+  }
+
   const itensFiltrados = filtro === "Todos" ? itens : itens.filter((i) => i.categoria === filtro);
 
   function nivelEstoque(item) {
@@ -113,7 +138,7 @@ function Estoque({ irPara }) {
   function formatarDataHora(data) {
     if (!data) return "";
     const d = new Date(data);
-    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    return String(d.getDate()).padStart(2,"0") + "/" + String(d.getMonth()+1).padStart(2,"0") + " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
   }
 
   const itensCriticos = itens.filter((i) => statusEstoque(i) === "critico" || statusEstoque(i) === "zerado");
@@ -129,7 +154,10 @@ function Estoque({ irPara }) {
             <h1 className="estoque-titulo">Estoque de insumos</h1>
             <span className="estoque-sub">Controle o que você tem no galpão</span>
           </div>
-          <button className="btn-novo-item" onClick={() => setMostrarForm(true)}>+ Novo item</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-whatsapp" onClick={compartilharWhatsApp}>📲 Lista de compras</button>
+            <button className="btn-novo-item" onClick={() => setMostrarForm(true)}>+ Novo item</button>
+          </div>
         </div>
 
         <div className="estoque-metrics">
@@ -196,7 +224,6 @@ function Estoque({ irPara }) {
           )}
         </div>
 
-        {/* modal historico */}
         {mostrarHistorico && (
           <div className="modal-overlay" onClick={() => setMostrarHistorico(null)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -212,12 +239,8 @@ function Estoque({ irPara }) {
                         {h.tipo === "entrada" ? "+" : "−"}
                       </div>
                       <div className="historico-info">
-                        <div className="historico-qtd">
-                          {h.tipo === "entrada" ? "+" : "−"}{h.quantidade} unidades
-                        </div>
-                        <div className="historico-detalhe">
-                          {h.quantidade_anterior} → {h.quantidade_nova}
-                        </div>
+                        <div className="historico-qtd">{h.tipo === "entrada" ? "+" : "−"}{h.quantidade} unidades</div>
+                        <div className="historico-detalhe">{h.quantidade_anterior} → {h.quantidade_nova}</div>
                       </div>
                       <div className="historico-data">{formatarDataHora(h.criado_em)}</div>
                     </div>
@@ -229,7 +252,6 @@ function Estoque({ irPara }) {
           </div>
         )}
 
-        {/* modal novo item */}
         {mostrarForm && (
           <div className="modal-overlay" onClick={() => setMostrarForm(false)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -280,7 +302,6 @@ function Estoque({ irPara }) {
           </div>
         )}
 
-        {/* modal movimento */}
         {mostrarMovimento && (
           <div className="modal-overlay" onClick={() => setMostrarMovimento(null)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
