@@ -305,3 +305,27 @@
 }
 
 .btn-salvar:hover { background: #1b4332; }
+
+.prod-abas {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e8dc;
+}
+
+.prod-aba {
+  height: 36px;
+  padding: 0 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  color: #888;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.12s;
+  margin-bottom: -1px;
+}
+
+.prod-aba:hover { color: #2d6a4f; }
+.prod-aba-ativa { color: #2d6a4f; border-bottom-color: #2d6a4f; font-weight: 500; }

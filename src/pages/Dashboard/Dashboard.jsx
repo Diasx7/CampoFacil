@@ -10,6 +10,85 @@ function corEstoque(pct) {
   return "#639922";
 }
 
+// gera alertas inteligentes baseado nos dados reais
+function gerarAlertas(talhoes, estoque, atividades, transacoes) {
+  const alertas = [];
+
+  // verifica estoque critico
+  estoque.forEach((item) => {
+    const pct = parseFloat(item.minimo) > 0
+      ? (parseFloat(item.quantidade) / parseFloat(item.minimo)) * 100
+      : 100;
+
+    if (parseFloat(item.quantidade) === 0) {
+      alertas.push({
+        tipo: "critico",
+        texto: `${item.nome} zerado no estoque`,
+        sub: `Estoque mínimo recomendado: ${item.minimo} ${item.unidade}`,
+        cor: "#E24B4A",
+      });
+    } else if (pct < 30) {
+      alertas.push({
+        tipo: "atencao",
+        texto: `${item.nome} com estoque baixo (${Math.round(pct)}%)`,
+        sub: `Restam ${item.quantidade} ${item.unidade} — mínimo: ${item.minimo} ${item.unidade}`,
+        cor: "#EF9F27",
+      });
+    }
+  });
+
+  // verifica talhoes sem atividade nos ultimos 30 dias
+  const hoje = new Date();
+  talhoes.forEach((talhao) => {
+    if (talhao.cultura && talhao.cultura !== "Sem plantio") {
+      const ultimaAtividade = atividades.find((a) => a.talhao === talhao.nome);
+      if (!ultimaAtividade) {
+        alertas.push({
+          tipo: "info",
+          texto: `Nenhuma atividade registrada em ${talhao.nome}`,
+          sub: `Cultura: ${talhao.cultura} — considere registrar atividades`,
+          cor: "#378ADD",
+        });
+      } else {
+        const diasSemAtividade = Math.floor((hoje - new Date(ultimaAtividade.data)) / (1000 * 60 * 60 * 24));
+        if (diasSemAtividade > 30) {
+          alertas.push({
+            tipo: "info",
+            texto: `${talhao.nome} sem registro há ${diasSemAtividade} dias`,
+            sub: `Última atividade: ${ultimaAtividade.tipo}`,
+            cor: "#378ADD",
+          });
+        }
+      }
+    }
+  });
+
+  // verifica se tem mais gastos que receitas
+  const totalReceitas = transacoes.filter((t) => t.tipo === "receita").reduce((acc, t) => acc + parseFloat(t.valor), 0);
+  const totalGastos = transacoes.filter((t) => t.tipo === "gasto").reduce((acc, t) => acc + parseFloat(t.valor), 0);
+  if (totalGastos > totalReceitas && totalGastos > 0) {
+    alertas.push({
+      tipo: "atencao",
+      texto: "Gastos maiores que receitas na safra",
+      sub: `Déficit de ${(totalGastos - totalReceitas).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`,
+      cor: "#EF9F27",
+    });
+  }
+
+  // verifica talhoes sem cultura definida
+  const semCultura = talhoes.filter((t) => !t.cultura || t.cultura === "Sem plantio");
+  if (semCultura.length > 0) {
+    alertas.push({
+      tipo: "info",
+      texto: `${semCultura.length} talhão(s) sem cultura definida`,
+      sub: semCultura.map((t) => t.nome).join(", "),
+      cor: "#378ADD",
+    });
+  }
+
+  return alertas.slice(0, 5); // mostra no maximo 5 alertas
+}
+
 function Dashboard({ irPara }) {
   const [talhoes, setTalhoes] = useState([]);
   const [estoque, setEstoque] = useState([]);
@@ -17,7 +96,6 @@ function Dashboard({ irPara }) {
   const [transacoes, setTransacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
-  // pega o nome do usuario do localStorage
   const usuarioSalvo = localStorage.getItem('usuario');
   const usuario = usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
   const primeiroNome = usuario?.nome?.split(' ')[0] || 'Produtor';
@@ -33,7 +111,7 @@ function Dashboard({ irPara }) {
         ]);
         setTalhoes(resTalhoes.data);
         setEstoque(resEstoque.data);
-        setAtividades(resCaderno.data.slice(0, 4));
+        setAtividades(resCaderno.data);
         setTransacoes(resFinanceiro.data);
       } catch (err) {
         console.error('Erro ao carregar dashboard:', err);
@@ -44,15 +122,17 @@ function Dashboard({ irPara }) {
     carregarDados();
   }, []);
 
-  // calculos
   const areaTotal = talhoes.reduce((acc, t) => acc + parseFloat(t.area || 0), 0).toFixed(1);
   const areaEmUso = talhoes.filter((t) => t.cultura && t.cultura !== "Sem plantio")
     .reduce((acc, t) => acc + parseFloat(t.area || 0), 0).toFixed(1);
   const totalGastos = transacoes.filter((t) => t.tipo === "gasto").reduce((acc, t) => acc + parseFloat(t.valor), 0);
   const itensCriticos = estoque.filter((i) => {
-    const pct = (parseFloat(i.quantidade) / parseFloat(i.minimo)) * 100;
-    return i.quantidade === 0 || pct < 30;
+    const pct = parseFloat(i.minimo) > 0 ? (parseFloat(i.quantidade) / parseFloat(i.minimo)) * 100 : 100;
+    return parseFloat(i.quantidade) === 0 || pct < 30;
   });
+
+  // gera alertas inteligentes
+  const alertas = gerarAlertas(talhoes, estoque, atividades, transacoes);
 
   function formatarData(data) {
     if (!data) return "";
@@ -65,6 +145,8 @@ function Dashboard({ irPara }) {
     if (status === "Cobertura hoje") return "warn";
     return "plan";
   }
+
+  const ultimasAtividades = [...atividades].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 4);
 
   return (
     <div className="dash-pagina">
@@ -79,16 +161,9 @@ function Dashboard({ irPara }) {
             </span>
           </div>
           <div className="dash-topbar-direito">
-            <div className="badge-clima">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="7" cy="7" r="3" fill="#EF9F27" />
-                <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.9 2.9l1.1 1.1M10 10l1.1 1.1M2.9 11.1l1.1-1.1M10 4l1.1-1.1" stroke="#EF9F27" strokeWidth="1.2" strokeLinecap="round" />
-              </svg>
-              Uberlândia, MG
-            </div>
-            {itensCriticos.length > 0 && (
+            {alertas.length > 0 && (
               <div className="badge-alerta" onClick={() => irPara("estoque")}>
-                {itensCriticos.length} alerta{itensCriticos.length > 1 ? "s" : ""}
+                {alertas.length} alerta{alertas.length > 1 ? "s" : ""}
               </div>
             )}
           </div>
@@ -118,10 +193,10 @@ function Dashboard({ irPara }) {
                 </div>
               </div>
               <div className="metric-card">
-                <div className="metric-label">Estoque crítico</div>
-                <div className="metric-val">{itensCriticos.length} itens</div>
-                <div className={`metric-sub ${itensCriticos.length > 0 ? "negativo" : "positivo"}`}>
-                  {itensCriticos.length > 0 ? "Atenção necessária" : "Tudo ok"}
+                <div className="metric-label">Alertas ativos</div>
+                <div className="metric-val">{alertas.length}</div>
+                <div className={`metric-sub ${alertas.length > 0 ? "negativo" : "positivo"}`}>
+                  {alertas.length > 0 ? "Atenção necessária" : "Tudo ok"}
                 </div>
               </div>
             </div>
@@ -158,18 +233,18 @@ function Dashboard({ irPara }) {
                   <Clima />
                 </div>
 
-                {itensCriticos.length > 0 && (
+                {alertas.length > 0 && (
                   <div className="card">
                     <div className="card-header">
                       <span className="card-titulo">Alertas</span>
                       <span className="card-link" onClick={() => irPara("estoque")}>ver estoque →</span>
                     </div>
-                    {itensCriticos.map((i) => (
-                      <div key={i.id} className="alerta-item">
-                        <div className="alerta-dot" style={{ background: "#E24B4A" }}></div>
+                    {alertas.map((a, i) => (
+                      <div key={i} className="alerta-item">
+                        <div className="alerta-dot" style={{ background: a.cor }}></div>
                         <div>
-                          <div className="alerta-texto">{i.nome} com estoque crítico</div>
-                          <div className="alerta-sub">{i.quantidade} {i.unidade} · mín: {i.minimo} {i.unidade}</div>
+                          <div className="alerta-texto">{a.texto}</div>
+                          <div className="alerta-sub">{a.sub}</div>
                         </div>
                       </div>
                     ))}
@@ -189,7 +264,9 @@ function Dashboard({ irPara }) {
                   <p style={{ fontSize: "13px", color: "#888" }}>Nenhum item no estoque ainda.</p>
                 ) : (
                   estoque.slice(0, 4).map((e) => {
-                    const pct = e.minimo > 0 ? Math.min(Math.round((e.quantidade / e.minimo) * 100), 100) : 100;
+                    const pct = parseFloat(e.minimo) > 0
+                      ? Math.min(Math.round((parseFloat(e.quantidade) / parseFloat(e.minimo)) * 100), 100)
+                      : 100;
                     return (
                       <div key={e.id} className="bar-wrap">
                         <div className="bar-label">
@@ -211,10 +288,10 @@ function Dashboard({ irPara }) {
                   <span className="card-titulo">Últimas atividades</span>
                   <span className="card-link" onClick={() => irPara("caderno")}>ver caderno →</span>
                 </div>
-                {atividades.length === 0 ? (
+                {ultimasAtividades.length === 0 ? (
                   <p style={{ fontSize: "13px", color: "#888" }}>Nenhuma atividade registrada ainda.</p>
                 ) : (
-                  atividades.map((a) => (
+                  ultimasAtividades.map((a) => (
                     <div key={a.id} className="atividade-row">
                       <div className="ativ-data">{formatarData(a.data)}</div>
                       <div>

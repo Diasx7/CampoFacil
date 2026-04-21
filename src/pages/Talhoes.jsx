@@ -17,6 +17,7 @@ function Talhoes({ irPara }) {
   const [novoNome, setNovoNome] = useState("");
   const [novaCultura, setNovaCultura] = useState("");
   const [areaMedida, setAreaMedida] = useState(null);
+  const [pontosMedidos, setPontosMedidos] = useState([]);
   const [formEditar, setFormEditar] = useState({ nome: "", cultura: "", status: "", cor: "" });
 
   useEffect(() => {
@@ -34,8 +35,10 @@ function Talhoes({ irPara }) {
     }
   }
 
-  function receberArea(area) {
+  // agora recebe area E pontos do mapa
+  function receberArea(area, pontos) {
     setAreaMedida(area);
+    setPontosMedidos(pontos || []);
     setMostrarForm(true);
   }
 
@@ -49,12 +52,14 @@ function Talhoes({ irPara }) {
         area: areaMedida,
         cor: coresTalhoes[talhoes.length % coresTalhoes.length],
         status: "Planejando",
+        poligono: pontosMedidos, // salva os pontos do mapa
       });
       setTalhoes([...talhoes, resposta.data]);
       setMostrarForm(false);
       setNovoNome("");
       setNovaCultura("");
       setAreaMedida(null);
+      setPontosMedidos([]);
     } catch (err) {
       console.error('Erro ao salvar talhão:', err);
     }
@@ -67,8 +72,13 @@ function Talhoes({ irPara }) {
 
   async function salvarEditar(e) {
     e.preventDefault();
+    const talhaoAtual = talhoes.find((t) => t.id === mostrarEditar);
     try {
-      const resposta = await api.put(`/talhoes/${mostrarEditar}`, formEditar);
+      const resposta = await api.put(`/talhoes/${mostrarEditar}`, {
+        ...formEditar,
+        area: talhaoAtual.area,
+        poligono: talhaoAtual.poligono || [],
+      });
       setTalhoes(talhoes.map((t) => t.id === mostrarEditar ? resposta.data : t));
       setMostrarEditar(null);
     } catch (err) {
@@ -90,6 +100,7 @@ function Talhoes({ irPara }) {
     setNovoNome("");
     setNovaCultura("");
     setAreaMedida(null);
+    setPontosMedidos([]);
   }
 
   return (
@@ -112,7 +123,8 @@ function Talhoes({ irPara }) {
 
         <div className="talhoes-grid">
           <div className="mapa-wrapper">
-            <MapaTalhoes onAreaMedida={receberArea} />
+            {/* passa os talhoes salvos pro mapa mostrar os poligonos */}
+            <MapaTalhoes onAreaMedida={receberArea} talhoesSalvos={talhoes} />
             <div className="mapa-dica">
               Clique nos pontos do mapa para desenhar o talhão — o app calcula os hectares automaticamente
             </div>
@@ -181,7 +193,6 @@ function Talhoes({ irPara }) {
         </div>
       </div>
 
-      {/* modal editar talhao */}
       {mostrarEditar && (
         <div className="modal-overlay-talhao" onClick={() => setMostrarEditar(null)}>
           <div className="form-card" onClick={(e) => e.stopPropagation()} style={{ position: "relative", zIndex: 1001 }}>
@@ -210,13 +221,11 @@ function Talhoes({ irPara }) {
                 <label className="label">Cor</label>
                 <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
                   {coresTalhoes.map((cor) => (
-                    <div key={cor}
-                      onClick={() => setFormEditar({ ...formEditar, cor })}
+                    <div key={cor} onClick={() => setFormEditar({ ...formEditar, cor })}
                       style={{
                         width: "24px", height: "24px", borderRadius: "50%", background: cor, cursor: "pointer",
                         border: formEditar.cor === cor ? "3px solid #1a2e1a" : "2px solid transparent",
-                      }}
-                    />
+                      }} />
                   ))}
                 </div>
               </div>

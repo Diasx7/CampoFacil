@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import api from "../api";
 import useTalhoes from "../hooks/useTalhoes";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import "./Produtividade.css";
 
 const safras = ["Todas", "2025/2026", "2024/2025", "2023/2024"];
@@ -14,13 +15,19 @@ const coresTalhoes = {
   "Área Reserva": "#B4B2A9",
 };
 
+// pega uma cor pra cada talhao dinamicamente
+function getCorTalhao(nome, index) {
+  const cores = ["#639922", "#378ADD", "#EF9F27", "#D85A30", "#534AB7", "#1D9E75"];
+  return coresTalhoes[nome] || cores[index % cores.length];
+}
+
 function Produtividade({ irPara }) {
   const [registros, setRegistros] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [filtroTalhao, setFiltroTalhao] = useState("Todos");
+  const [abaAtiva, setAbaAtiva] = useState("tabela");
   const [mostrarForm, setMostrarForm] = useState(false);
 
-  // busca talhoes reais
   const { nomesDosTalhoes } = useTalhoes();
   const talhoesFiltro = ["Todos", ...nomesDosTalhoes];
 
@@ -56,12 +63,24 @@ function Produtividade({ irPara }) {
 
   const safraAtual = "2025/2026";
   const registrosFiltrados = registros.filter((r) => filtroTalhao === "Todos" || r.talhao === filtroTalhao);
-  const ranking = registros.filter((r) => r.safra === safraAtual)
+
+  const ranking = registros
+    .filter((r) => r.safra === safraAtual)
     .map((r) => ({ ...r, porHectare: r.unidade === "sacas/ha" ? r.producao : Math.round(r.producao / r.area) }))
     .sort((a, b) => b.porHectare - a.porHectare);
 
-  const maxProducao = Math.max(...registros.map((r) => parseFloat(r.producao)), 1);
   const safrasUnicas = [...new Set(registros.map((r) => r.safra))];
+  const talhoesUnicos = [...new Set(registros.map((r) => r.talhao))];
+
+  // dados pro grafico de comparativo entre safras
+  const dadosGrafico = safrasUnicas.map((safra) => {
+    const obj = { safra };
+    talhoesUnicos.forEach((talhao) => {
+      const reg = registros.find((r) => r.safra === safra && r.talhao === talhao);
+      obj[talhao] = reg ? parseFloat(reg.producao) : 0;
+    });
+    return obj;
+  }).sort((a, b) => a.safra.localeCompare(b.safra));
 
   async function salvarRegistro(e) {
     e.preventDefault();
@@ -117,32 +136,81 @@ function Produtividade({ irPara }) {
           </div>
         </div>
 
-        <div className="prod-grid">
+        {/* abas */}
+        <div className="prod-abas">
+          <button className={`prod-aba ${abaAtiva === "tabela" ? "prod-aba-ativa" : ""}`} onClick={() => setAbaAtiva("tabela")}>Tabela</button>
+          <button className={`prod-aba ${abaAtiva === "grafico" ? "prod-aba-ativa" : ""}`} onClick={() => setAbaAtiva("grafico")}>Gráficos</button>
+          <button className={`prod-aba ${abaAtiva === "ranking" ? "prod-aba-ativa" : ""}`} onClick={() => setAbaAtiva("ranking")}>Ranking</button>
+        </div>
+
+        {/* aba tabela */}
+        {abaAtiva === "tabela" && (
           <div className="prod-card">
             <div className="prod-card-header">
-              <span className="prod-card-titulo">Produção por talhão</span>
-              <span className="prod-card-sub">Todas as safras</span>
-            </div>
-            {carregando ? (
-              <p style={{ fontSize: "13px", color: "#888" }}>Carregando...</p>
-            ) : registros.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "#888" }}>Nenhum registro ainda. Clique em "Registrar colheita"!</p>
-            ) : (
-              <div className="grafico-barras">
-                {registros.map((r) => (
-                  <div key={r.id} className="barra-item">
-                    <div className="barra-label">{r.talhao.replace("Talhão ", "T. ")}</div>
-                    <div className="barra-wrap">
-                      <div className="barra-fill" style={{ width: `${(parseFloat(r.producao) / maxProducao) * 100}%`, background: coresTalhoes[r.talhao] || "#639922" }}></div>
-                    </div>
-                    <div className="barra-valor">{r.producao} {r.unidade}</div>
-                    <div className="barra-safra">{r.safra}</div>
-                  </div>
+              <span className="prod-card-titulo">Comparativo entre safras</span>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                {talhoesFiltro.map((t) => (
+                  <button key={t} className={`filtro-btn ${filtroTalhao === t ? "filtro-btn-ativo" : ""}`}
+                    onClick={() => setFiltroTalhao(t)}>{t}</button>
                 ))}
               </div>
+            </div>
+            <div className="tabela-comparativo">
+              <div className="tabela-cab">
+                <span>Talhão</span><span>Cultura</span><span>Safra</span>
+                <span>Área</span><span>Produção</span><span>Unidade</span><span></span>
+              </div>
+              {carregando ? (
+                <p style={{ fontSize: "13px", color: "#888", padding: "1rem 0" }}>Carregando...</p>
+              ) : registrosFiltrados.length === 0 ? (
+                <p style={{ fontSize: "13px", color: "#888", padding: "1rem 0" }}>Nenhum registro encontrado.</p>
+              ) : (
+                registrosFiltrados.map((r, i) => (
+                  <div key={r.id} className={`tabela-linha ${i % 2 === 0 ? "linha-par" : ""}`}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: coresTalhoes[r.talhao] || "#639922", flexShrink: 0 }}></div>
+                      {r.talhao}
+                    </span>
+                    <span>{r.cultura}</span>
+                    <span>{r.safra}</span>
+                    <span>{r.area} ha</span>
+                    <span style={{ fontWeight: 500, color: "#2d6a4f" }}>{r.producao}</span>
+                    <span>{r.unidade}</span>
+                    <span><button className="btn-del" onClick={() => deletarRegistro(r.id)}>✕</button></span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* aba grafico */}
+        {abaAtiva === "grafico" && (
+          <div className="prod-card">
+            <div className="prod-card-header">
+              <span className="prod-card-titulo">Produção por talhão e safra</span>
+            </div>
+            {dadosGrafico.length === 0 ? (
+              <p style={{ fontSize: "13px", color: "#888" }}>Nenhum dado ainda. Registre uma colheita!</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={dadosGrafico} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f4ec" />
+                  <XAxis dataKey="safra" tick={{ fontSize: 12, fill: "#888" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "#888" }} />
+                  <Tooltip />
+                  <Legend />
+                  {talhoesUnicos.map((talhao, i) => (
+                    <Bar key={talhao} dataKey={talhao} fill={getCorTalhao(talhao, i)} radius={[4,4,0,0]} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </div>
+        )}
 
+        {/* aba ranking */}
+        {abaAtiva === "ranking" && (
           <div className="prod-card">
             <div className="prod-card-header">
               <span className="prod-card-titulo">Ranking — safra {safraAtual}</span>
@@ -155,53 +223,17 @@ function Produtividade({ irPara }) {
                   <div className={`ranking-pos ${i === 0 ? "pos-1" : i === 1 ? "pos-2" : "pos-3"}`}>{i + 1}</div>
                   <div className="ranking-info">
                     <div className="ranking-nome">{r.talhao}</div>
-                    <div className="ranking-cultura">{r.cultura}</div>
+                    <div className="ranking-cultura">{r.cultura} · {r.area} ha</div>
                   </div>
                   <div className="ranking-prod">
                     <div className="ranking-val">{r.producao} {r.unidade}</div>
-                    <div className="ranking-area">{r.area} ha</div>
+                    <div className="ranking-area">{r.porHectare} por ha</div>
                   </div>
                 </div>
               ))
             )}
           </div>
-        </div>
-
-        <div className="prod-card" style={{ marginTop: "10px" }}>
-          <div className="prod-card-header">
-            <span className="prod-card-titulo">Comparativo entre safras</span>
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-              {talhoesFiltro.map((t) => (
-                <button key={t} className={`filtro-btn ${filtroTalhao === t ? "filtro-btn-ativo" : ""}`}
-                  onClick={() => setFiltroTalhao(t)}>{t}</button>
-              ))}
-            </div>
-          </div>
-          <div className="tabela-comparativo">
-            <div className="tabela-cab">
-              <span>Talhão</span><span>Cultura</span><span>Safra</span>
-              <span>Área</span><span>Produção</span><span>Unidade</span><span></span>
-            </div>
-            {registrosFiltrados.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "#888", padding: "1rem 0" }}>Nenhum registro encontrado.</p>
-            ) : (
-              registrosFiltrados.map((r, i) => (
-                <div key={r.id} className={`tabela-linha ${i % 2 === 0 ? "linha-par" : ""}`}>
-                  <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: coresTalhoes[r.talhao] || "#639922", flexShrink: 0 }}></div>
-                    {r.talhao}
-                  </span>
-                  <span>{r.cultura}</span>
-                  <span>{r.safra}</span>
-                  <span>{r.area} ha</span>
-                  <span style={{ fontWeight: 500, color: "#2d6a4f" }}>{r.producao}</span>
-                  <span>{r.unidade}</span>
-                  <span><button className="btn-del" onClick={() => deletarRegistro(r.id)}>✕</button></span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        )}
 
         {mostrarForm && (
           <div className="modal-overlay" onClick={() => setMostrarForm(false)}>

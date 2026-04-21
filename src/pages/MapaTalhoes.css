@@ -94,3 +94,17 @@
 
 .btn-localizacao:hover { background: #e6f1fb; }
 .btn-localizacao:disabled { color: #aaa; cursor: not-allowed; }
+
+.talhao-tooltip {
+  background: #1a3a2a;
+  border: none;
+  color: #e8f5e9;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.talhao-tooltip::before {
+  display: none;
+}
