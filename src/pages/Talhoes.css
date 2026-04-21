@@ -254,3 +254,26 @@
   background: #fcebeb;
   color: #A32D2D;
 }
+
+.btn-editar {
+  background: none;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.12s;
+  margin-left: 4px;
+}
+
+.btn-editar:hover { background: #eaf3de; }
+
+.modal-overlay-talhao {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}

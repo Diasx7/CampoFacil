@@ -4,16 +4,21 @@ import MapaTalhoes from "./MapaTalhoes";
 import api from "../api";
 import "./Talhoes.css";
 
+const coresTalhoes = ["#639922", "#378ADD", "#EF9F27", "#D85A30", "#534AB7", "#1D9E75", "#B4B2A9"];
+const statusOpcoes = ["Planejando", "Plantado", "Em crescimento", "Colheita", "Pousio"];
+const culturaOpcoes = ["Sem plantio", "Milho silagem", "Milho grão", "Soja", "Sorgo", "Capim / Pastagem", "Cana-de-açúcar", "Hortifrutti"];
+
 function Talhoes({ irPara }) {
   const [talhoes, setTalhoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [talhaoCerto, setTalhaoCerto] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [mostrarEditar, setMostrarEditar] = useState(null);
   const [novoNome, setNovoNome] = useState("");
   const [novaCultura, setNovaCultura] = useState("");
   const [areaMedida, setAreaMedida] = useState(null);
+  const [formEditar, setFormEditar] = useState({ nome: "", cultura: "", status: "", cor: "" });
 
-  // busca os talhoes do banco quando a tela abre
   useEffect(() => {
     buscarTalhoes();
   }, []);
@@ -37,17 +42,14 @@ function Talhoes({ irPara }) {
   async function salvarTalhao(e) {
     e.preventDefault();
     if (!novoNome || !areaMedida) return;
-
     try {
       const resposta = await api.post('/talhoes', {
         nome: novoNome,
         cultura: novaCultura || "Sem plantio",
         area: areaMedida,
-        cor: "#639922",
+        cor: coresTalhoes[talhoes.length % coresTalhoes.length],
         status: "Planejando",
       });
-
-      // adiciona o novo talhao na lista
       setTalhoes([...talhoes, resposta.data]);
       setMostrarForm(false);
       setNovoNome("");
@@ -55,6 +57,22 @@ function Talhoes({ irPara }) {
       setAreaMedida(null);
     } catch (err) {
       console.error('Erro ao salvar talhão:', err);
+    }
+  }
+
+  function abrirEditar(t) {
+    setFormEditar({ nome: t.nome, cultura: t.cultura, status: t.status, cor: t.cor });
+    setMostrarEditar(t.id);
+  }
+
+  async function salvarEditar(e) {
+    e.preventDefault();
+    try {
+      const resposta = await api.put(`/talhoes/${mostrarEditar}`, formEditar);
+      setTalhoes(talhoes.map((t) => t.id === mostrarEditar ? resposta.data : t));
+      setMostrarEditar(null);
+    } catch (err) {
+      console.error('Erro ao editar talhão:', err);
     }
   }
 
@@ -95,7 +113,6 @@ function Talhoes({ irPara }) {
         <div className="talhoes-grid">
           <div className="mapa-wrapper">
             <MapaTalhoes onAreaMedida={receberArea} />
-
             <div className="mapa-dica">
               Clique nos pontos do mapa para desenhar o talhão — o app calcula os hectares automaticamente
             </div>
@@ -104,33 +121,17 @@ function Talhoes({ irPara }) {
               <div className="form-overlay">
                 <div className="form-card">
                   <h3 className="form-titulo">Novo talhão</h3>
-                  <p className="form-area-medida">
-                    Área medida: <strong>{areaMedida} ha</strong>
-                  </p>
+                  <p className="form-area-medida">Área medida: <strong>{areaMedida} ha</strong></p>
                   <form onSubmit={salvarTalhao}>
                     <div className="campo">
                       <label className="label">Nome do talhão</label>
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="Ex: Talhão Norte"
-                        value={novoNome}
-                        onChange={(e) => setNovoNome(e.target.value)}
-                        autoFocus
-                      />
+                      <input type="text" className="input" placeholder="Ex: Talhão Norte" required
+                        value={novoNome} onChange={(e) => setNovoNome(e.target.value)} autoFocus />
                     </div>
                     <div className="campo">
                       <label className="label">Cultura (opcional)</label>
-                      <select className="input" value={novaCultura}
-                        onChange={(e) => setNovaCultura(e.target.value)}>
-                        <option value="">Sem plantio</option>
-                        <option>Milho silagem</option>
-                        <option>Milho grão</option>
-                        <option>Soja</option>
-                        <option>Sorgo</option>
-                        <option>Capim / Pastagem</option>
-                        <option>Cana-de-açúcar</option>
-                        <option>Hortifrutti</option>
+                      <select className="input" value={novaCultura} onChange={(e) => setNovaCultura(e.target.value)}>
+                        {culturaOpcoes.map((c) => <option key={c}>{c}</option>)}
                       </select>
                     </div>
                     <div className="form-botoes">
@@ -155,8 +156,7 @@ function Talhoes({ irPara }) {
               <p style={{ fontSize: "13px", color: "#888", padding: "1rem 0" }}>Nenhum talhão cadastrado ainda.</p>
             ) : (
               talhoes.map((t) => (
-                <div
-                  key={t.id}
+                <div key={t.id}
                   className={`talhao-card ${talhaoCerto === t.id ? "talhao-card-ativo" : ""}`}
                   onClick={() => setTalhaoCerto(t.id === talhaoCerto ? null : t.id)}
                 >
@@ -169,10 +169,10 @@ function Talhoes({ irPara }) {
                     <span className={`talhao-status status-${t.status === "Em crescimento" || t.status === "Plantado" ? "ok" : t.status === "Cobertura hoje" ? "warn" : "plan"}`}>
                       {t.status}
                     </span>
-                    <button
-                      className="btn-deletar"
-                      onClick={(e) => { e.stopPropagation(); deletarTalhao(t.id); }}
-                    >✕</button>
+                    <button className="btn-editar" title="Editar"
+                      onClick={(e) => { e.stopPropagation(); abrirEditar(t); }}>✏️</button>
+                    <button className="btn-deletar"
+                      onClick={(e) => { e.stopPropagation(); deletarTalhao(t.id); }}>✕</button>
                   </div>
                 </div>
               ))
@@ -180,6 +180,54 @@ function Talhoes({ irPara }) {
           </div>
         </div>
       </div>
+
+      {/* modal editar talhao */}
+      {mostrarEditar && (
+        <div className="modal-overlay-talhao" onClick={() => setMostrarEditar(null)}>
+          <div className="form-card" onClick={(e) => e.stopPropagation()} style={{ position: "relative", zIndex: 1001 }}>
+            <h3 className="form-titulo">Editar talhão</h3>
+            <form onSubmit={salvarEditar}>
+              <div className="campo">
+                <label className="label">Nome</label>
+                <input type="text" className="input" required
+                  value={formEditar.nome} onChange={(e) => setFormEditar({ ...formEditar, nome: e.target.value })} />
+              </div>
+              <div className="campo">
+                <label className="label">Cultura</label>
+                <select className="input" value={formEditar.cultura}
+                  onChange={(e) => setFormEditar({ ...formEditar, cultura: e.target.value })}>
+                  {culturaOpcoes.map((c) => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="campo">
+                <label className="label">Status</label>
+                <select className="input" value={formEditar.status}
+                  onChange={(e) => setFormEditar({ ...formEditar, status: e.target.value })}>
+                  {statusOpcoes.map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="campo">
+                <label className="label">Cor</label>
+                <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
+                  {coresTalhoes.map((cor) => (
+                    <div key={cor}
+                      onClick={() => setFormEditar({ ...formEditar, cor })}
+                      style={{
+                        width: "24px", height: "24px", borderRadius: "50%", background: cor, cursor: "pointer",
+                        border: formEditar.cor === cor ? "3px solid #1a2e1a" : "2px solid transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="form-botoes" style={{ marginTop: "1rem" }}>
+                <button type="button" className="btn-cancelar" onClick={() => setMostrarEditar(null)}>Cancelar</button>
+                <button type="submit" className="btn-salvar">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

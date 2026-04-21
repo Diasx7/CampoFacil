@@ -326,3 +326,33 @@
   background: #fcebeb;
   color: #A32D2D;
 }
+
+.filtro-data-painel {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0 4px;
+}
+
+.filtro-data-painel .campo {
+  margin-bottom: 0;
+  min-width: 160px;
+}
+
+.btn-limpar-filtros {
+  height: 28px;
+  padding: 0 12px;
+  background: none;
+  border: 1px solid #e0e8dc;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #A32D2D;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.12s;
+  align-self: flex-start;
+}
+
+.btn-limpar-filtros:hover {
+  background: #fcebeb;
+  border-color: #f09595;
+}

@@ -8,15 +8,14 @@ import Estoque from "./pages/Estoque.jsx";
 import Caderno from "./pages/Caderno.jsx";
 import Financeiro from "./pages/Financeiro.jsx";
 import Produtividade from "./pages/Produtividade.jsx";
+import Perfil from "./pages/Perfil.jsx";
 
 function App() {
   const [tela, setTela] = useState("login");
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
-      setTela("dashboard");
-    }
+    if (token) setTela("dashboard");
   }, []);
 
   function irPara(novaTela) {
@@ -38,6 +37,7 @@ function App() {
       {tela === "caderno" && <Caderno irPara={irPara} />}
       {tela === "financeiro" && <Financeiro irPara={irPara} />}
       {tela === "produtividade" && <Produtividade irPara={irPara} />}
+      {tela === "perfil" && <Perfil irPara={irPara} />}
     </div>
   );
 }

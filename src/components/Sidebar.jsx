@@ -1,7 +1,6 @@
 import "./Sidebar.css";
 
 function Sidebar({ telaAtiva, irPara }) {
-  // pega os dados do usuario logado
   const usuarioSalvo = localStorage.getItem('usuario');
   const usuario = usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
   const nomeCompleto = usuario?.nome || 'Usuário';
@@ -81,13 +80,13 @@ function Sidebar({ telaAtiva, irPara }) {
         </button>
       </nav>
 
-      <div className="sidebar-usuario">
+      <div className="sidebar-usuario" onClick={() => irPara("perfil")} style={{ cursor: "pointer" }} title="Editar perfil">
         <div className="sidebar-avatar">{iniciais}</div>
         <div className="sidebar-usuario-info">
           <div className="sidebar-nome">{nomeCompleto}</div>
           {propriedade && <div className="sidebar-prop">{propriedade}</div>}
         </div>
-        <button className="btn-logout" onClick={() => irPara("login")} title="Sair">
+        <button className="btn-logout" onClick={(e) => { e.stopPropagation(); irPara("login"); }} title="Sair">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>

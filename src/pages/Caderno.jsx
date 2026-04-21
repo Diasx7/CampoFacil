@@ -33,10 +33,12 @@ function Caderno({ irPara }) {
   const [carregando, setCarregando] = useState(true);
   const [filtroTalhao, setFiltroTalhao] = useState("Todos");
   const [filtroTipo, setFiltroTipo] = useState("Todos");
+  const [filtroDataInicio, setFiltroDataInicio] = useState("");
+  const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [mostrarFiltroData, setMostrarFiltroData] = useState(false);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [expandido, setExpandido] = useState(null);
 
-  // busca os talhoes reais do usuario
   const { nomesDosTalhoes } = useTalhoes();
   const talhoesFiltro = ["Todos", ...nomesDosTalhoes];
 
@@ -53,7 +55,6 @@ function Caderno({ irPara }) {
     buscarRegistros();
   }, []);
 
-  // atualiza o talhao padrão do form quando os talhoes carregarem
   useEffect(() => {
     if (nomesDosTalhoes.length > 0 && !form.talhao) {
       setForm((f) => ({ ...f, talhao: nomesDosTalhoes[0] }));
@@ -71,9 +72,17 @@ function Caderno({ irPara }) {
     }
   }
 
+  // filtra com data tambem
   const registrosFiltrados = registros
     .filter((r) => filtroTalhao === "Todos" || r.talhao === filtroTalhao)
     .filter((r) => filtroTipo === "Todos" || r.tipo === filtroTipo)
+    .filter((r) => {
+      if (!filtroDataInicio && !filtroDataFim) return true;
+      const data = new Date(r.data);
+      if (filtroDataInicio && data < new Date(filtroDataInicio)) return false;
+      if (filtroDataFim && data > new Date(filtroDataFim)) return false;
+      return true;
+    })
     .sort((a, b) => new Date(b.data) - new Date(a.data));
 
   async function salvarRegistro(e) {
@@ -104,11 +113,20 @@ function Caderno({ irPara }) {
     }
   }
 
+  function limparFiltros() {
+    setFiltroTalhao("Todos");
+    setFiltroTipo("Todos");
+    setFiltroDataInicio("");
+    setFiltroDataFim("");
+  }
+
   const totalMes = registros.filter((r) => {
     const d = new Date(r.data);
     const hoje = new Date();
     return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
   }).length;
+
+  const temFiltroAtivo = filtroTalhao !== "Todos" || filtroTipo !== "Todos" || filtroDataInicio || filtroDataFim;
 
   return (
     <div className="caderno-pagina">
@@ -132,10 +150,8 @@ function Caderno({ irPara }) {
             <div className="metric-val">{totalMes}</div>
           </div>
           <div className="metric-card">
-            <div className="metric-label">Último registro</div>
-            <div className="metric-val" style={{ fontSize: "16px" }}>
-              {registros.length > 0 ? formatarData(registros[0].data) : "-"}
-            </div>
+            <div className="metric-label">Filtrados</div>
+            <div className="metric-val">{registrosFiltrados.length}</div>
           </div>
         </div>
 
@@ -149,6 +165,7 @@ function Caderno({ irPara }) {
               ))}
             </div>
           </div>
+
           <div className="filtro-grupo">
             <span className="filtro-label">Tipo:</span>
             <div className="filtro-btns">
@@ -158,6 +175,45 @@ function Caderno({ irPara }) {
               ))}
             </div>
           </div>
+
+          {/* filtro de data */}
+          <div className="filtro-grupo">
+            <span className="filtro-label">Data:</span>
+            <div className="filtro-btns">
+              <button
+                className={`filtro-btn ${mostrarFiltroData ? "filtro-btn-ativo" : ""}`}
+                onClick={() => setMostrarFiltroData(!mostrarFiltroData)}
+              >
+                {filtroDataInicio || filtroDataFim ? `${filtroDataInicio || "..."} até ${filtroDataFim || "..."}` : "Filtrar por data"}
+              </button>
+              {(filtroDataInicio || filtroDataFim) && (
+                <button className="filtro-btn" onClick={() => { setFiltroDataInicio(""); setFiltroDataFim(""); }}>
+                  ✕ Limpar data
+                </button>
+              )}
+            </div>
+          </div>
+
+          {mostrarFiltroData && (
+            <div className="filtro-data-painel">
+              <div className="campo">
+                <label className="label">De</label>
+                <input type="date" className="input" value={filtroDataInicio}
+                  onChange={(e) => setFiltroDataInicio(e.target.value)} />
+              </div>
+              <div className="campo">
+                <label className="label">Até</label>
+                <input type="date" className="input" value={filtroDataFim}
+                  onChange={(e) => setFiltroDataFim(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          {temFiltroAtivo && (
+            <button className="btn-limpar-filtros" onClick={limparFiltros}>
+              Limpar todos os filtros
+            </button>
+          )}
         </div>
 
         <div className="registros-lista">
