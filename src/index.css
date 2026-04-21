@@ -12,13 +12,141 @@ body {
   min-height: 100vh;
 }
 
-/* fonte do google - adicionar no index.html */
-/* <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"> */
-
-input, select, button {
+input, select, button, textarea {
   font-family: inherit;
 }
 
 button {
   cursor: pointer;
+}
+
+/* scroll suave */
+* {
+  scroll-behavior: smooth;
+}
+
+/* responsividade mobile */
+@media (max-width: 768px) {
+
+  .dash-pagina,
+  .talhoes-pagina,
+  .plantios-pagina,
+  .prod-pagina,
+  .estoque-pagina,
+  .caderno-pagina,
+  .fin-pagina,
+  .perfil-pagina {
+    flex-direction: column;
+    padding-bottom: 70px;
+  }
+
+  .dash-main,
+  .talhoes-main,
+  .plantios-main,
+  .prod-main,
+  .estoque-main,
+  .caderno-main,
+  .fin-main,
+  .perfil-main {
+    padding: 1rem;
+  }
+
+  .dash-metrics,
+  .prod-metrics,
+  .estoque-metrics,
+  .caderno-metrics,
+  .fin-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid2,
+  .dash-grid2,
+  .fin-grid,
+  .prod-grid,
+  .plantios-grid,
+  .talhoes-grid,
+  .perfil-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .login-pagina,
+  .cadastro-pagina {
+    flex-direction: column;
+  }
+
+  .login-painel-esquerdo,
+  .cadastro-painel-esquerdo {
+    width: 100%;
+    min-height: 180px;
+    padding: 1.5rem;
+  }
+
+  .login-painel-conteudo,
+  .cadastro-painel-conteudo {
+    padding-bottom: 1.5rem;
+  }
+
+  .login-titulo,
+  .cadastro-titulo {
+    font-size: 22px;
+  }
+
+  .login-painel-direito,
+  .cadastro-painel-direito {
+    padding: 1.5rem;
+  }
+
+  .estoque-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .mapa-leaflet {
+    height: 350px;
+  }
+
+  .dash-topbar,
+  .talhoes-header,
+  .prod-header,
+  .estoque-header,
+  .caderno-header,
+  .fin-header,
+  .perfil-header,
+  .plantios-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .fin-header-btns {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-gasto,
+  .btn-receita {
+    flex: 1;
+  }
+
+  .modal-card {
+    width: 92%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .linha-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .tabela-comparativo,
+  .insumos-tabela {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .metric-val {
+    font-size: 18px;
+  }
 }
