@@ -54,6 +54,15 @@ function Sidebar({ telaAtiva, irPara }) {
           Produtividade
         </button>
 
+        <button className={`sidebar-item ${telaAtiva === "diagnostico" ? "sidebar-item-ativo" : ""}`} onClick={() => irPara("diagnostico")}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M10.5 10.5 L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M7 5v4M5 7h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          Diagnóstico
+        </button>
+
         <span className="sidebar-secao">Gestão</span>
 
         <button className={`sidebar-item ${telaAtiva === "estoque" ? "sidebar-item-ativo" : ""}`} onClick={() => irPara("estoque")}>

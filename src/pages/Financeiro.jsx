@@ -25,6 +25,7 @@ function Financeiro({ irPara }) {
   const [carregando, setCarregando] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [abaAtiva, setAbaAtiva] = useState("lancamentos");
+  const [filtroSafra, setFiltroSafra] = useState("todas");
   const [mostrarForm, setMostrarForm] = useState(false);
   const [tipoForm, setTipoForm] = useState("gasto");
 
@@ -58,8 +59,12 @@ function Financeiro({ irPara }) {
   const totalGastos = transacoes.filter((t) => t.tipo === "gasto").reduce((acc, t) => acc + parseFloat(t.valor), 0);
   const saldo = totalReceitas - totalGastos;
 
+  // anos disponiveis pra filtrar por safra
+  const anosDisponiveis = [...new Set(transacoes.map((t) => new Date(t.data).getFullYear()))].sort().reverse();
+
   const transacoesFiltradas = transacoes
     .filter((t) => filtroTipo === "todos" || t.tipo === filtroTipo)
+    .filter((t) => filtroSafra === "todas" || new Date(t.data).getFullYear() === parseInt(filtroSafra))
     .sort((a, b) => new Date(b.data) - new Date(a.data));
 
   const dadosBarras = categoriasGasto.map((cat) => ({
@@ -284,7 +289,14 @@ function Financeiro({ irPara }) {
             <div className="fin-card">
               <div className="fin-card-header">
                 <span className="fin-card-titulo">Lançamentos</span>
-                <div className="filtro-tipo">
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <select className="input" style={{ height: "30px", fontSize: "12px", width: "110px" }}
+                  value={filtroSafra} onChange={(e) => setFiltroSafra(e.target.value)}>
+                  <option value="todas">Todos os anos</option>
+                  {anosDisponiveis.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div className="filtro-tipo">
                   <button className={`filtro-tipo-btn ${filtroTipo === "todos" ? "filtro-tipo-ativo" : ""}`} onClick={() => setFiltroTipo("todos")}>Todos</button>
                   <button className={`filtro-tipo-btn ${filtroTipo === "receita" ? "filtro-tipo-ativo-receita" : ""}`} onClick={() => setFiltroTipo("receita")}>Receitas</button>
                   <button className={`filtro-tipo-btn ${filtroTipo === "gasto" ? "filtro-tipo-ativo-gasto" : ""}`} onClick={() => setFiltroTipo("gasto")}>Gastos</button>

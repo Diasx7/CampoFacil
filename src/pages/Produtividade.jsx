@@ -28,7 +28,7 @@ function Produtividade({ irPara }) {
   const [abaAtiva, setAbaAtiva] = useState("tabela");
   const [mostrarForm, setMostrarForm] = useState(false);
 
-  const { nomesDosTalhoes } = useTalhoes();
+  const { talhoes, nomesDosTalhoes } = useTalhoes();
   const talhoesFiltro = ["Todos", ...nomesDosTalhoes];
 
   const [form, setForm] = useState({
@@ -81,6 +81,19 @@ function Produtividade({ irPara }) {
     });
     return obj;
   }).sort((a, b) => a.safra.localeCompare(b.safra));
+
+  // quando selecionar talhao, preenche area e cultura automaticamente
+  function selecionarTalhao(nomeTalhao) {
+    const talhaoEncontrado = talhoes.find((t) => t.nome === nomeTalhao);
+    setForm({
+      ...form,
+      talhao: nomeTalhao,
+      area: talhaoEncontrado ? talhaoEncontrado.area : form.area,
+      cultura: talhaoEncontrado?.cultura && talhaoEncontrado.cultura !== "Sem plantio"
+        ? talhaoEncontrado.cultura
+        : form.cultura,
+    });
+  }
 
   async function salvarRegistro(e) {
     e.preventDefault();
@@ -243,7 +256,7 @@ function Produtividade({ irPara }) {
                 <div className="linha-2">
                   <div className="campo">
                     <label className="label">Talhão</label>
-                    <select className="input" value={form.talhao} onChange={(e) => setForm({ ...form, talhao: e.target.value })}>
+                    <select className="input" value={form.talhao} onChange={(e) => selecionarTalhao(e.target.value)}>
                       {nomesDosTalhoes.map((t) => <option key={t}>{t}</option>)}
                     </select>
                   </div>

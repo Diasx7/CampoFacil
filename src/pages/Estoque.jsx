@@ -14,7 +14,7 @@ function Estoque({ irPara }) {
   const [mostrarHistorico, setMostrarHistorico] = useState(null);
   const [historico, setHistorico] = useState([]);
   const [form, setForm] = useState({ nome: "", categoria: "Adubo", unidade: "kg", quantidade: "", minimo: "", preco: "" });
-  const [movimento, setMovimento] = useState({ tipo: "entrada", quantidade: "" });
+  const [movimento, setMovimento] = useState({ tipo: "entrada", quantidade: "", registrarFinanceiro: false, valorTotal: "" });
 
   useEffect(() => {
     buscarEstoque();
@@ -119,8 +119,25 @@ function Estoque({ irPara }) {
         tipo: movimento.tipo,
       });
       setItens(itens.map((i) => i.id === mostrarMovimento ? resposta.data : i));
+
+      // se for entrada e marcou pra registrar no financeiro
+      if (movimento.tipo === "entrada" && movimento.registrarFinanceiro && movimento.valorTotal) {
+        await api.post('/financeiro', {
+          tipo: "gasto",
+          descricao: `Compra de ${item.nome} (${qtd} ${item.unidade})`,
+          categoria: item.categoria === "Herbicida" || item.categoria === "Inseticida" || item.categoria === "Fungicida"
+            ? "Defensivo"
+            : item.categoria === "Semente" ? "Semente"
+            : item.categoria === "Adubo" || item.categoria === "Correção" ? "Adubo"
+            : "Outro",
+          valor: parseFloat(movimento.valorTotal),
+          talhao: "Todos",
+          data: new Date().toISOString().split("T")[0],
+        });
+      }
+
       setMostrarMovimento(null);
-      setMovimento({ tipo: "entrada", quantidade: "" });
+      setMovimento({ tipo: "entrada", quantidade: "", registrarFinanceiro: false, valorTotal: "" });
     } catch (err) {
       console.error('Erro ao atualizar estoque:', err);
     }
@@ -319,6 +336,27 @@ function Estoque({ irPara }) {
                   <input type="number" className="input" placeholder="0" required step="0.1"
                     value={movimento.quantidade} onChange={(e) => setMovimento({ ...movimento, quantidade: e.target.value })} />
                 </div>
+
+                {movimento.tipo === "entrada" && (
+                  <div style={{ marginTop: "10px" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#555", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={movimento.registrarFinanceiro}
+                        onChange={(e) => setMovimento({ ...movimento, registrarFinanceiro: e.target.checked })}
+                      />
+                      Registrar como gasto no financeiro
+                    </label>
+                    {movimento.registrarFinanceiro && (
+                      <div className="campo" style={{ marginTop: "10px" }}>
+                        <label className="label">Valor total da compra (R$)</label>
+                        <input type="number" className="input" placeholder="0,00" step="0.01" required
+                          value={movimento.valorTotal} onChange={(e) => setMovimento({ ...movimento, valorTotal: e.target.value })} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="modal-botoes">
                   <button type="button" className="btn-cancelar" onClick={() => setMostrarMovimento(null)}>Cancelar</button>
                   <button type="submit" className="btn-salvar">Confirmar</button>
